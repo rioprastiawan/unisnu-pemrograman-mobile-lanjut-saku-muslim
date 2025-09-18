@@ -1,7 +1,5 @@
 # ERD / SKEMA MODEL DATA: SAKU MUSLIM (DETAIL TEKNIS)
 
----
-
 - **Versi:** 1.0 (MVP)
 - **Tanggal:** 18 September 2025
 - **Author**
