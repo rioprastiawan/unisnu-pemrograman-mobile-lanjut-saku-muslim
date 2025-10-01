@@ -14,6 +14,14 @@ export default defineNuxtConfig({
         "/inheritance",
         "/calendar",
         "/settings",
+        "/en",
+        "/en/quran",
+        "/en/dua",
+        "/en/qibla",
+        "/en/zakat",
+        "/en/inheritance",
+        "/en/calendar",
+        "/en/settings",
       ],
     },
   },
@@ -22,7 +30,25 @@ export default defineNuxtConfig({
     "@pinia/nuxt",
     "@vueuse/nuxt",
     "@nuxtjs/google-fonts",
+    "@nuxtjs/i18n",
   ],
+  i18n: {
+    defaultLocale: "id",
+    locales: [
+      {
+        code: "id",
+        name: "Bahasa Indonesia",
+        file: "id.json",
+      },
+      {
+        code: "en",
+        name: "English",
+        file: "en.json",
+      },
+    ],
+    langDir: "locales/",
+    strategy: "prefix_except_default",
+  },
   googleFonts: {
     families: {
       Inter: [400, 500, 600, 700],

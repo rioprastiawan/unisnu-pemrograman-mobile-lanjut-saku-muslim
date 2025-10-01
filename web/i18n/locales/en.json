@@ -1,0 +1,169 @@
+{
+  "app": {
+    "title": "Saku Muslim",
+    "description": "Islamic App - Prayer Times, Qibla, Al-Quran, and more"
+  },
+  "navigation": {
+    "home": "Home",
+    "quran": "Al-Qur'an",
+    "dua": "Dua",
+    "qibla": "Qibla",
+    "zakat": "Zakat",
+    "inheritance": "Inheritance",
+    "calendar": "Calendar",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "Assalamu'alaikum",
+    "subtitle": "Welcome to Saku Muslim",
+    "currentTime": "Current Time",
+    "nextPrayer": "Next Prayer",
+    "prayerTimes": "Prayer Times Today",
+    "qiblaDirection": "Qibla Direction",
+    "prayers": {
+      "fajr": "Fajr",
+      "dhuhr": "Dhuhr",
+      "asr": "Asr",
+      "maghrib": "Maghrib",
+      "isha": "Isha",
+      "sunrise": "Sunrise"
+    },
+    "status": {
+      "passed": "Passed",
+      "next": "Next",
+      "upcoming": "Upcoming"
+    }
+  },
+  "quran": {
+    "title": "Al-Qur'an Kareem",
+    "subtitle": "30 Juz • 114 Surah • 6,236 Verses",
+    "search": "Search surah...",
+    "verses": "verses",
+    "revelationType": {
+      "meccan": "Meccan",
+      "medinan": "Medinan"
+    }
+  },
+  "dua": {
+    "title": "Daily Duas",
+    "search": "Search dua...",
+    "categories": {
+      "all": "All",
+      "daily": "Daily",
+      "prayer": "Prayer",
+      "food": "Food",
+      "travel": "Travel"
+    },
+    "transliteration": "Transliteration",
+    "translation": "Translation",
+    "whenToRecite": "When to recite"
+  },
+  "qibla": {
+    "title": "Qibla Direction",
+    "location": "Your Location",
+    "direction": "Direction",
+    "distance": "Distance to Ka'bah",
+    "accuracy": "Accuracy",
+    "calibrating": "Calibrating...",
+    "enableLocation": "Enable location to get accurate qibla direction",
+    "allowLocation": "Allow Location Access"
+  },
+  "zakat": {
+    "title": "Zakat Calculator",
+    "types": {
+      "mal": "Zakat Mal",
+      "fitrah": "Zakat Fitrah"
+    },
+    "mal": {
+      "title": "Zakat Mal (Wealth)",
+      "description": "Zakat on wealth owned for one year",
+      "cash": "Cash",
+      "savings": "Savings",
+      "gold": "Gold",
+      "silver": "Silver",
+      "business": "Business/Trade",
+      "totalWealth": "Total Wealth",
+      "nisab": "Nisab",
+      "zakatAmount": "Zakat Amount (2.5%)",
+      "calculate": "Calculate Zakat"
+    },
+    "fitrah": {
+      "title": "Zakat Fitrah",
+      "description": "Obligatory charity paid before Eid al-Fitr",
+      "people": "Number of People",
+      "ricePrice": "Rice Price per Kg",
+      "totalAmount": "Total Zakat Fitrah",
+      "calculate": "Calculate Zakat"
+    }
+  },
+  "inheritance": {
+    "title": "Inheritance Calculator",
+    "description": "Calculate inheritance distribution according to Islamic law (Faraidh)",
+    "estateValue": "Estate Value",
+    "debts": "Debts",
+    "funeralCosts": "Funeral Costs",
+    "heirs": "Heirs",
+    "addHeir": "Add Heir",
+    "calculate": "Calculate Inheritance",
+    "result": "Distribution Result",
+    "netEstate": "Net Estate",
+    "heirTypes": {
+      "father": "Father",
+      "mother": "Mother",
+      "husband": "Husband",
+      "wife": "Wife",
+      "son": "Son",
+      "daughter": "Daughter",
+      "brother": "Brother",
+      "sister": "Sister"
+    }
+  },
+  "calendar": {
+    "title": "Hijri Calendar",
+    "today": "Today",
+    "islamicEvents": "Islamic Events",
+    "months": {
+      "muharram": "Muharram",
+      "safar": "Safar",
+      "rabiulawwal": "Rabi' al-Awwal",
+      "rabiulakhir": "Rabi' al-Akhir",
+      "jumadilawwal": "Jumada al-Awwal",
+      "jumadilakhir": "Jumada al-Akhir",
+      "rajab": "Rajab",
+      "syaban": "Sha'ban",
+      "ramadan": "Ramadan",
+      "syawal": "Shawwal",
+      "dzulqidah": "Dhu al-Qi'dah",
+      "dzulhijjah": "Dhu al-Hijjah"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "notifications": "Notifications",
+    "prayerReminders": "Prayer Reminders",
+    "location": "Location",
+    "about": "About App",
+    "version": "Version"
+  },
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "tryAgain": "Try Again",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

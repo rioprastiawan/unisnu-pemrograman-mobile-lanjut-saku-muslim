@@ -14,7 +14,9 @@
           :class="{ 'nav-item-active': $route.path === '/' }"
         >
           <div class="text-2xl mb-1">🕌</div>
-          <span class="text-xs theme-text-primary">Kiblat</span>
+          <span class="text-xs theme-text-primary">{{
+            $t("navigation.home")
+          }}</span>
         </NuxtLink>
 
         <NuxtLink
@@ -23,7 +25,9 @@
           :class="{ 'nav-item-active': $route.path === '/quran' }"
         >
           <div class="text-2xl mb-1">📖</div>
-          <span class="text-xs theme-text-primary">Al-Qur'an</span>
+          <span class="text-xs theme-text-primary">{{
+            $t("navigation.quran")
+          }}</span>
         </NuxtLink>
 
         <NuxtLink
@@ -32,10 +36,17 @@
           :class="{ 'nav-item-active': $route.path === '/settings' }"
         >
           <div class="text-2xl mb-1">⚙️</div>
-          <span class="text-xs theme-text-primary">Pengaturan</span>
+          <span class="text-xs theme-text-primary">{{
+            $t("navigation.settings")
+          }}</span>
         </NuxtLink>
       </div>
     </nav>
+
+    <!-- Language Switcher FAB -->
+    <div class="fixed top-4 left-4 z-50">
+      <LanguageSwitcher />
+    </div>
 
     <!-- Theme Toggle FAB -->
     <button

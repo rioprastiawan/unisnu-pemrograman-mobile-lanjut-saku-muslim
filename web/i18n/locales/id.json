@@ -1,0 +1,169 @@
+{
+  "app": {
+    "title": "Saku Muslim",
+    "description": "Aplikasi Saku Muslim - Waktu Sholat, Kiblat, Al-Quran, dan lebih banyak lagi"
+  },
+  "navigation": {
+    "home": "Beranda",
+    "quran": "Al-Qur'an",
+    "dua": "Doa",
+    "qibla": "Kiblat",
+    "zakat": "Zakat",
+    "inheritance": "Warisan",
+    "calendar": "Kalender",
+    "settings": "Pengaturan"
+  },
+  "home": {
+    "title": "Assalamu'alaikum",
+    "subtitle": "Selamat datang di Saku Muslim",
+    "currentTime": "Waktu Sekarang",
+    "nextPrayer": "Sholat Selanjutnya",
+    "prayerTimes": "Waktu Sholat Hari Ini",
+    "qiblaDirection": "Arah Kiblat",
+    "prayers": {
+      "fajr": "Subuh",
+      "dhuhr": "Dzuhur",
+      "asr": "Ashar",
+      "maghrib": "Maghrib",
+      "isha": "Isya",
+      "sunrise": "Matahari Terbit"
+    },
+    "status": {
+      "passed": "Sudah berlalu",
+      "next": "Selanjutnya",
+      "upcoming": "Akan datang"
+    }
+  },
+  "quran": {
+    "title": "Al-Qur'an Kareem",
+    "subtitle": "30 Juz • 114 Surah • 6,236 Ayat",
+    "search": "Cari surah...",
+    "verses": "ayat",
+    "revelationType": {
+      "meccan": "Makkiyah",
+      "medinan": "Madaniyah"
+    }
+  },
+  "dua": {
+    "title": "Doa Harian",
+    "search": "Cari doa...",
+    "categories": {
+      "all": "Semua",
+      "daily": "Harian",
+      "prayer": "Sholat",
+      "food": "Makanan",
+      "travel": "Perjalanan"
+    },
+    "transliteration": "Transliterasi",
+    "translation": "Terjemahan",
+    "whenToRecite": "Kapan dibaca"
+  },
+  "qibla": {
+    "title": "Arah Kiblat",
+    "location": "Lokasi Anda",
+    "direction": "Arah",
+    "distance": "Jarak ke Ka'bah",
+    "accuracy": "Akurasi",
+    "calibrating": "Mengkalibrasi...",
+    "enableLocation": "Aktifkan lokasi untuk mendapatkan arah kiblat yang akurat",
+    "allowLocation": "Izinkan Akses Lokasi"
+  },
+  "zakat": {
+    "title": "Kalkulator Zakat",
+    "types": {
+      "mal": "Zakat Mal",
+      "fitrah": "Zakat Fitrah"
+    },
+    "mal": {
+      "title": "Zakat Mal (Harta)",
+      "description": "Zakat yang dikeluarkan dari harta yang dimiliki selama satu tahun",
+      "cash": "Uang Tunai",
+      "savings": "Tabungan",
+      "gold": "Emas",
+      "silver": "Perak",
+      "business": "Usaha/Dagang",
+      "totalWealth": "Total Harta",
+      "nisab": "Nisab",
+      "zakatAmount": "Jumlah Zakat (2.5%)",
+      "calculate": "Hitung Zakat"
+    },
+    "fitrah": {
+      "title": "Zakat Fitrah",
+      "description": "Zakat yang wajib dikeluarkan setiap Muslim menjelang Idul Fitri",
+      "people": "Jumlah Orang",
+      "ricePrice": "Harga Beras per Kg",
+      "totalAmount": "Total Zakat Fitrah",
+      "calculate": "Hitung Zakat"
+    }
+  },
+  "inheritance": {
+    "title": "Kalkulator Warisan",
+    "description": "Hitung pembagian warisan sesuai hukum Islam (Faraidh)",
+    "estateValue": "Nilai Harta Warisan",
+    "debts": "Hutang",
+    "funeralCosts": "Biaya Pemakaman",
+    "heirs": "Ahli Waris",
+    "addHeir": "Tambah Ahli Waris",
+    "calculate": "Hitung Warisan",
+    "result": "Hasil Pembagian",
+    "netEstate": "Harta Bersih",
+    "heirTypes": {
+      "father": "Ayah",
+      "mother": "Ibu",
+      "husband": "Suami",
+      "wife": "Istri",
+      "son": "Anak Laki-laki",
+      "daughter": "Anak Perempuan",
+      "brother": "Saudara Laki-laki",
+      "sister": "Saudara Perempuan"
+    }
+  },
+  "calendar": {
+    "title": "Kalender Hijriah",
+    "today": "Hari Ini",
+    "islamicEvents": "Peristiwa Islam",
+    "months": {
+      "muharram": "Muharram",
+      "safar": "Safar",
+      "rabiulawwal": "Rabi'ul Awwal",
+      "rabiulakhir": "Rabi'ul Akhir",
+      "jumadilawwal": "Jumadil Awwal",
+      "jumadilakhir": "Jumadil Akhir",
+      "rajab": "Rajab",
+      "syaban": "Sya'ban",
+      "ramadan": "Ramadan",
+      "syawal": "Syawal",
+      "dzulqidah": "Dzulqi'dah",
+      "dzulhijjah": "Dzulhijjah"
+    }
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "language": "Bahasa",
+    "theme": "Tema",
+    "themes": {
+      "light": "Terang",
+      "dark": "Gelap"
+    },
+    "notifications": "Notifikasi",
+    "prayerReminders": "Pengingat Sholat",
+    "location": "Lokasi",
+    "about": "Tentang Aplikasi",
+    "version": "Versi"
+  },
+  "common": {
+    "back": "Kembali",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "add": "Tambah",
+    "search": "Cari",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "tryAgain": "Coba Lagi",
+    "confirm": "Konfirmasi",
+    "yes": "Ya",
+    "no": "Tidak"
+  }
+}

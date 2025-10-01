@@ -18,7 +18,9 @@
         </svg>
       </button>
 
-      <h1 class="text-xl font-semibold theme-text-primary">Menu Lainnya</h1>
+      <h1 class="text-xl font-semibold theme-text-primary">
+        {{ $t("settings.title") }}
+      </h1>
 
       <div class="w-10"></div>
       <!-- Spacer -->
@@ -32,8 +34,10 @@
         class="theme-card p-6 hover:opacity-80 transition-all text-center"
       >
         <div class="text-4xl mb-3">📖</div>
-        <h3 class="font-semibold theme-text-primary mb-1">Al-Qur'an</h3>
-        <p class="text-sm theme-text-secondary">Read the Holy Quran</p>
+        <h3 class="font-semibold theme-text-primary mb-1">
+          {{ $t("navigation.quran") }}
+        </h3>
+        <p class="text-sm theme-text-secondary">{{ $t("quran.title") }}</p>
       </button>
 
       <!-- Doa Harian -->
@@ -42,8 +46,10 @@
         class="theme-card p-6 hover:opacity-80 transition-all text-center"
       >
         <div class="text-4xl mb-3">🤲</div>
-        <h3 class="font-semibold theme-text-primary mb-1">Doa Harian</h3>
-        <p class="text-sm theme-text-secondary">Daily Islamic prayers</p>
+        <h3 class="font-semibold theme-text-primary mb-1">
+          {{ $t("navigation.dua") }}
+        </h3>
+        <p class="text-sm theme-text-secondary">{{ $t("dua.title") }}</p>
       </button>
 
       <!-- Kalkulator Zakat -->
@@ -149,6 +155,47 @@
         </div>
       </div>
 
+      <!-- Language Settings -->
+      <div class="theme-card p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="text-2xl mr-3">🌐</div>
+            <div>
+              <h3 class="font-medium theme-text-primary">
+                {{ $t("settings.language") }}
+              </h3>
+              <p class="text-sm theme-text-secondary">
+                {{ currentLanguageName }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              @click="setLanguage('id')"
+              class="px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+              :class="
+                $i18n.locale === 'id'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              "
+            >
+              🇮🇩 ID
+            </button>
+            <button
+              @click="setLanguage('en')"
+              class="px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+              :class="
+                $i18n.locale === 'en'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              "
+            >
+              🇺🇸 EN
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Theme Settings -->
       <div class="theme-card p-4">
         <div class="flex items-center justify-between">
@@ -203,9 +250,16 @@
 </template>
 
 <script setup>
+const { locale, locales } = useI18n();
 const currentLocation = ref("Jakarta, Indonesia");
 const notificationsEnabled = ref(true);
 const isDark = ref(false);
+
+// Get current language name
+const currentLanguageName = computed(() => {
+  const currentLocale = locales.value.find((l) => l.code === locale.value);
+  return currentLocale ? currentLocale.name : "Unknown";
+});
 
 // Initialize theme
 onMounted(() => {
@@ -231,6 +285,18 @@ const setTheme = (theme) => {
       html.classList.remove("dark");
     }
   }
+};
+
+const setLanguage = async (lang) => {
+  await navigateTo(
+    locale.value === "id" && lang !== "id"
+      ? `/${lang}${$route.path}`
+      : $route.path,
+    {
+      replace: true,
+    }
+  );
+  locale.value = lang;
 };
 
 const updateLocation = () => {

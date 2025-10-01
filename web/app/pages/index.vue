@@ -41,7 +41,8 @@
         {{ nextPrayerTime }} AM
       </div>
       <div class="text-green-600 font-medium mb-2">
-        Next prayer: {{ nextPrayerName }}
+        {{ $t("home.nextPrayer") }}:
+        {{ $t(`home.prayers.${nextPrayerName.toLowerCase()}`) }}
       </div>
       <div class="text-2xl font-mono theme-text-primary mb-4">
         {{ countdown }}
@@ -78,8 +79,9 @@
           class="flex flex-col items-center p-3 rounded-xl bg-green-100 hover:bg-green-200 dark:bg-green-900/50 dark:hover:bg-green-800/50 transition-colors"
         >
           <div class="text-3xl mb-1">🕋</div>
-          <span class="text-sm text-green-700 dark:text-green-400 font-medium"
-            >Qibla Direction</span
+          <span
+            class="text-sm text-green-700 dark:text-green-400 font-medium"
+            >{{ $t("home.qiblaDirection") }}</span
           >
         </button>
       </div>
@@ -88,7 +90,7 @@
     <!-- Prayer Times Today -->
     <div class="mb-6">
       <h2 class="text-lg font-semibold theme-text-primary mb-4">
-        Prayer Times Today
+        {{ $t("home.prayerTimes") }}
       </h2>
 
       <div class="space-y-3">
@@ -105,10 +107,16 @@
             <div class="text-2xl mr-3">{{ prayer.icon }}</div>
             <div>
               <div class="font-medium theme-text-primary">
-                {{ prayer.name }}
+                {{ $t(`home.prayers.${prayer.name}`) }}
               </div>
               <div class="text-sm theme-text-secondary">
-                {{ prayer.status }}
+                {{
+                  prayer.isPassed
+                    ? $t("home.status.passed")
+                    : prayer.isNext
+                    ? $t("home.status.next")
+                    : $t("home.status.upcoming")
+                }}
               </div>
             </div>
           </div>
@@ -116,7 +124,15 @@
             <div class="font-semibold theme-text-primary">
               {{ prayer.time }}
             </div>
-            <div class="text-sm theme-text-secondary">{{ prayer.status }}</div>
+            <div class="text-sm theme-text-secondary">
+              {{
+                prayer.isPassed
+                  ? $t("home.status.passed")
+                  : prayer.isNext
+                  ? $t("home.status.next")
+                  : $t("home.status.upcoming")
+              }}
+            </div>
           </div>
         </div>
       </div>
@@ -126,49 +142,45 @@
 
 <script setup>
 // Mock data for now - will be replaced with API calls later
+const { t } = useI18n();
 const nextPrayerTime = ref("04:31");
-const nextPrayerName = ref("Fajr");
+const nextPrayerName = ref("fajr");
 const countdown = ref("00:29:58");
 const location = ref("Jakarta, Indonesia");
 
 const prayerTimes = ref([
   {
-    name: "Fajr",
+    name: "fajr",
     time: "04:02",
     icon: "🌅",
-    status: "Subuh",
     isNext: true,
     isPassed: false,
   },
   {
-    name: "Sunrise",
+    name: "sunrise",
     time: "05:23",
     icon: "☀️",
-    status: "Sunrise",
     isNext: false,
     isPassed: false,
   },
   {
-    name: "Dhuhr",
+    name: "dhuhr",
     time: "11:20",
     icon: "🌞",
-    status: "Dzuhur",
     isNext: false,
     isPassed: false,
   },
   {
-    name: "Asr",
+    name: "asr",
     time: "14:45",
     icon: "🌆",
-    status: "Ashar",
     isNext: false,
     isPassed: false,
   },
   {
-    name: "Maghrib",
+    name: "maghrib",
     time: "17:45",
     icon: "🌇",
-    status: "Maghrib",
     isNext: false,
     isPassed: true,
   },
