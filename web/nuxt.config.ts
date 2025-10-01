@@ -2,6 +2,21 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  ssr: false, // Disable SSR for GitHub Pages
+  nitro: {
+    prerender: {
+      routes: [
+        "/",
+        "/quran",
+        "/dua",
+        "/qibla",
+        "/zakat",
+        "/inheritance",
+        "/calendar",
+        "/settings",
+      ],
+    },
+  },
   modules: [
     "@nuxtjs/tailwindcss",
     "@pinia/nuxt",
@@ -16,6 +31,10 @@ export default defineNuxtConfig({
   },
   css: ["~/assets/css/main.css"],
   app: {
+    baseURL:
+      process.env.NODE_ENV === "production"
+        ? "/unisnu-pemrograman-mobile-lanjut-saku-muslim/"
+        : "/",
     head: {
       title: "Saku Muslim",
       meta: [
