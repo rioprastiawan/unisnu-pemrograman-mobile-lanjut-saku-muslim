@@ -1,5 +1,32 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true }
-})
+  compatibilityDate: "2025-07-15",
+  devtools: { enabled: true },
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@pinia/nuxt",
+    "@vueuse/nuxt",
+    "@nuxtjs/google-fonts",
+  ],
+  googleFonts: {
+    families: {
+      Inter: [400, 500, 600, 700],
+      Amiri: [400, 700], // For Arabic text
+    },
+  },
+  css: ["~/assets/css/main.css"],
+  app: {
+    head: {
+      title: "Saku Muslim",
+      meta: [
+        { charset: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        {
+          name: "description",
+          content:
+            "Aplikasi Saku Muslim - Waktu Sholat, Kiblat, Al-Quran, dan lebih banyak lagi",
+        },
+      ],
+    },
+  },
+});
