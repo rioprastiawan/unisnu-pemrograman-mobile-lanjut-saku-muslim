@@ -286,24 +286,6 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade700,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Tersedia jadwal sholat',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
           ],
         ),
       ),
