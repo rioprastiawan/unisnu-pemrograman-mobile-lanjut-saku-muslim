@@ -55,6 +55,9 @@ dependencies:
   # Calendar
   table_calendar: ^3.2.0
   flutter_compass: ^0.8.1
+  
+  # Audio player
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:

@@ -22,8 +22,9 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'saku_muslim.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -51,6 +52,57 @@ class DatabaseHelper {
         UNIQUE(city_id, date)
       )
     ''');
+
+    // Table for surah cache
+    await db.execute('''
+      CREATE TABLE surah_cache (
+        nomor INTEGER PRIMARY KEY,
+        nama TEXT NOT NULL,
+        namaLatin TEXT NOT NULL,
+        arti TEXT NOT NULL,
+        jumlahAyat INTEGER NOT NULL,
+        tempatTurun TEXT NOT NULL,
+        audioFull TEXT,
+        last_updated INTEGER NOT NULL
+      )
+    ''');
+
+    // Table for surah detail cache
+    await db.execute('''
+      CREATE TABLE surah_detail_cache (
+        nomor INTEGER PRIMARY KEY,
+        detail_data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add surah cache table for version 2
+      await db.execute('''
+        CREATE TABLE surah_cache (
+          nomor INTEGER PRIMARY KEY,
+          nama TEXT NOT NULL,
+          namaLatin TEXT NOT NULL,
+          arti TEXT NOT NULL,
+          jumlahAyat INTEGER NOT NULL,
+          tempatTurun TEXT NOT NULL,
+          audioFull TEXT,
+          last_updated INTEGER NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      // Add surah detail cache table for version 3
+      await db.execute('''
+        CREATE TABLE surah_detail_cache (
+          nomor INTEGER PRIMARY KEY,
+          detail_data TEXT NOT NULL,
+          last_updated INTEGER NOT NULL
+        )
+      ''');
+    }
   }
 
   // ==================== LOCATION METHODS ====================
@@ -152,12 +204,119 @@ class DatabaseHelper {
     return difference.inMinutes >= maxAgeMinutes;
   }
 
+  // ==================== SURAH METHODS ====================
+  
+  Future<List<Map<String, dynamic>>> getAllSurahsCache() async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'surah_cache',
+      orderBy: 'nomor ASC',
+    );
+    return results;
+  }
+
+  Future<void> saveSurahsCache(List<Map<String, dynamic>> surahs) async {
+    final db = await database;
+    final batch = db.batch();
+    
+    // Delete old cache
+    batch.delete('surah_cache');
+    
+    // Insert all surahs
+    for (var surah in surahs) {
+      batch.insert('surah_cache', {
+        'nomor': surah['nomor'],
+        'nama': surah['nama'],
+        'namaLatin': surah['namaLatin'],
+        'arti': surah['arti'],
+        'jumlahAyat': surah['jumlahAyat'],
+        'tempatTurun': surah['tempatTurun'],
+        'audioFull': surah['audioFull'],
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      });
+    }
+    
+    await batch.commit(noResult: true);
+  }
+
+  Future<bool> isSurahCacheEmpty() async {
+    final db = await database;
+    final count = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM surah_cache')
+    );
+    return count == 0;
+  }
+
+  Future<bool> isSurahCacheStale({int maxAgeDays = 30}) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'surah_cache',
+      limit: 1,
+    );
+
+    if (results.isEmpty) return true;
+
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(results.first['last_updated']);
+    final now = DateTime.now();
+    final difference = now.difference(lastUpdated);
+
+    return difference.inDays >= maxAgeDays;
+  }
+
+  // ==================== SURAH DETAIL METHODS ====================
+  
+  Future<Map<String, dynamic>?> getSurahDetailCache(int nomorSurah) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'surah_detail_cache',
+      where: 'nomor = ?',
+      whereArgs: [nomorSurah],
+      limit: 1,
+    );
+
+    if (results.isEmpty) return null;
+
+    final result = results.first;
+    return {
+      'nomor': result['nomor'],
+      'detail_data': jsonDecode(result['detail_data']),
+      'last_updated': result['last_updated'],
+    };
+  }
+
+  Future<void> saveSurahDetailCache(int nomorSurah, Map<String, dynamic> detailData) async {
+    final db = await database;
+    
+    await db.insert(
+      'surah_detail_cache',
+      {
+        'nomor': nomorSurah,
+        'detail_data': jsonEncode(detailData),
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<bool> isSurahDetailCacheStale(int nomorSurah, {int maxAgeDays = 30}) async {
+    final cache = await getSurahDetailCache(nomorSurah);
+    if (cache == null) return true;
+
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(cache['last_updated']);
+    final now = DateTime.now();
+    final difference = now.difference(lastUpdated);
+
+    return difference.inDays >= maxAgeDays;
+  }
+
   // ==================== UTILITY METHODS ====================
   
   Future<void> clearAllCache() async {
     final db = await database;
     await db.delete('location_cache');
     await db.delete('prayer_schedule_cache');
+    await db.delete('surah_cache');
+    await db.delete('surah_detail_cache');
   }
 
   Future<void> clearOldPrayerSchedules() async {
