@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/location_service.dart';
 import '../services/prayer_time_api_service.dart';
 import '../services/database_helper.dart';
+import '../services/notification_service.dart';
 import '../models/prayer_schedule.dart';
 import '../models/city.dart';
 import '../widgets/qibla_compass.dart';
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   final LocationService _locationService = LocationService();
   final PrayerTimeApiService _prayerApiService = PrayerTimeApiService();
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final NotificationService _notificationService = NotificationService();
   
   Timer? _clockTimer;
   bool _showColon = true;
@@ -238,6 +240,13 @@ class _HomePageState extends State<HomePage> {
         _isRefreshing = false;
         _errorMessage = null;
       });
+
+      // Schedule notifications for today's prayer times
+      try {
+        await _notificationService.scheduleDailyPrayerNotifications(schedule.jadwal);
+      } catch (e) {
+        print('Error scheduling notifications: $e');
+      }
     } catch (e) {
       if (!isBackground) {
         setState(() {

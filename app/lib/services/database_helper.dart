@@ -22,7 +22,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'saku_muslim.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -75,6 +75,28 @@ class DatabaseHelper {
         last_updated INTEGER NOT NULL
       )
     ''');
+
+    // Table for notification settings
+    await db.execute('''
+      CREATE TABLE notification_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        prayer_name TEXT NOT NULL UNIQUE,
+        is_enabled INTEGER NOT NULL DEFAULT 1,
+        sound_enabled INTEGER NOT NULL DEFAULT 1,
+        vibrate_enabled INTEGER NOT NULL DEFAULT 1
+      )
+    ''');
+
+    // Insert default notification settings for 5 prayers
+    await db.execute('''
+      INSERT INTO notification_settings (prayer_name, is_enabled, sound_enabled, vibrate_enabled)
+      VALUES 
+        ('subuh', 1, 1, 1),
+        ('dzuhur', 1, 1, 1),
+        ('ashar', 1, 1, 1),
+        ('maghrib', 1, 1, 1),
+        ('isya', 1, 1, 1)
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -101,6 +123,29 @@ class DatabaseHelper {
           detail_data TEXT NOT NULL,
           last_updated INTEGER NOT NULL
         )
+      ''');
+    }
+    if (oldVersion < 4) {
+      // Add notification settings table for version 4
+      await db.execute('''
+        CREATE TABLE notification_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          prayer_name TEXT NOT NULL UNIQUE,
+          is_enabled INTEGER NOT NULL DEFAULT 1,
+          sound_enabled INTEGER NOT NULL DEFAULT 1,
+          vibrate_enabled INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+
+      // Insert default notification settings
+      await db.execute('''
+        INSERT INTO notification_settings (prayer_name, is_enabled, sound_enabled, vibrate_enabled)
+        VALUES 
+          ('subuh', 1, 1, 1),
+          ('dzuhur', 1, 1, 1),
+          ('ashar', 1, 1, 1),
+          ('maghrib', 1, 1, 1),
+          ('isya', 1, 1, 1)
       ''');
     }
   }
@@ -330,6 +375,56 @@ class DatabaseHelper {
       'prayer_schedule_cache',
       where: 'date < ?',
       whereArgs: [yesterdayString],
+    );
+  }
+
+  // ==================== NOTIFICATION SETTINGS METHODS ====================
+  
+  Future<List<Map<String, dynamic>>> getAllNotificationSettings() async {
+    final db = await database;
+    return await db.query('notification_settings', orderBy: 'id ASC');
+  }
+
+  Future<Map<String, dynamic>?> getNotificationSetting(String prayerName) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'notification_settings',
+      where: 'prayer_name = ?',
+      whereArgs: [prayerName],
+      limit: 1,
+    );
+
+    return results.isEmpty ? null : results.first;
+  }
+
+  Future<void> updateNotificationSetting({
+    required String prayerName,
+    bool? isEnabled,
+    bool? soundEnabled,
+    bool? vibrateEnabled,
+  }) async {
+    final db = await database;
+    final Map<String, dynamic> updates = {};
+
+    if (isEnabled != null) updates['is_enabled'] = isEnabled ? 1 : 0;
+    if (soundEnabled != null) updates['sound_enabled'] = soundEnabled ? 1 : 0;
+    if (vibrateEnabled != null) updates['vibrate_enabled'] = vibrateEnabled ? 1 : 0;
+
+    if (updates.isNotEmpty) {
+      await db.update(
+        'notification_settings',
+        updates,
+        where: 'prayer_name = ?',
+        whereArgs: [prayerName],
+      );
+    }
+  }
+
+  Future<void> toggleAllNotifications(bool enabled) async {
+    final db = await database;
+    await db.update(
+      'notification_settings',
+      {'is_enabled': enabled ? 1 : 0},
     );
   }
 

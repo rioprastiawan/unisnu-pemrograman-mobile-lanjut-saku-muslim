@@ -5,10 +5,17 @@ import 'pages/calendar_page.dart';
 import 'pages/quran_page.dart';
 import 'pages/menu_page.dart';
 import 'pages/splash_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
+  
+  // Initialize notification service
+  await NotificationService().initialize();
+  
   runApp(const SakuMuslimApp());
 }
 

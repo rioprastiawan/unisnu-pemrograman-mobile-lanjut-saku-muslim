@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'asmaul_husna_page.dart';
+import 'settings_page.dart';
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -15,6 +16,22 @@ class MenuPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildMenuCard(
+            context,
+            icon: Icons.notifications,
+            title: 'Pengaturan Notifikasi',
+            subtitle: 'Atur notifikasi adzan dan pengingat',
+            color: Colors.teal,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           _buildMenuCard(
             context,
             icon: Icons.format_list_numbered,
