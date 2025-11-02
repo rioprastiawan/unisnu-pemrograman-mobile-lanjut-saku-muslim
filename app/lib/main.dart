@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'pages/home_page.dart';
 import 'pages/calendar_page.dart';
+import 'pages/quran_page.dart';
 import 'pages/menu_page.dart';
 import 'pages/splash_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   runApp(const SakuMuslimApp());
 }
 
@@ -38,6 +42,7 @@ class _MainPageState extends State<MainPage> {
   static const List<Widget> _pages = <Widget>[
     HomePage(),
     CalendarPage(),
+    QuranPage(),
     MenuPage(),
   ];
 
@@ -62,12 +67,18 @@ class _MainPageState extends State<MainPage> {
             label: 'Kalender',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book),
+            label: 'Al Quran',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.menu),
             label: 'Menu Lain',
           ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
       ),
     );

@@ -92,4 +92,19 @@ class LocationService {
       return null;
     }
   }
+
+  // Calculate distance between two coordinates (in meters)
+  Future<double> getDistanceBetween(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  ) async {
+    return Geolocator.distanceBetween(
+      startLatitude,
+      startLongitude,
+      endLatitude,
+      endLongitude,
+    );
+  }
 }
