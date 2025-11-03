@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD): Saku Muslim
 
 - **Versi:** 2.0 (Active Development)
-- **Tanggal Dibuat:** 18 September 2024
-- **Tanggal Update:** 3 November 2024
+- **Tanggal Dibuat:** 18 September 2025
+- **Tanggal Update:** 3 November 2025
 - **Author**
   - Bimo Rio Prastiawan (221240001220)
   - Rizky Alhusani Ghifari (221240001300)
@@ -14,8 +14,8 @@
 
 | Versi | Tanggal       | Perubahan                                                                                                    | Author       |
 | ----- | ------------- | ------------------------------------------------------------------------------------------------------------ | ------------ |
-| 1.0   | 18 Sep 2024   | Initial draft - MVP requirements                                                                             | Tim          |
-| 2.0   | 3 Nov 2024    | Update: MVP completed, Al-Qur'an feature added, monetization strategy, feedback dosen tentang premium features | Tim          |
+| 1.0   | 18 Sep 2025   | Initial draft - MVP requirements                                                                             | Tim          |
+| 2.0   | 3 Nov 2025    | Update: MVP completed, Al-Qur'an feature added, monetization strategy, feedback dosen tentang premium features | Tim          |
 
 ---
 
@@ -464,7 +464,7 @@ Fitur-fitur berikut secara eksplisit **TIDAK** akan dibuat untuk menjaga keseder
 
 ## 9. Development Roadmap
 
-### Phase 1: MVP (✅ COMPLETED - Sep - Oct 2024)
+### Phase 1: MVP (✅ COMPLETED - Sep - Oct 2025)
 - ✅ Jadwal Sholat dengan GPS
 - ✅ Kompas Kiblat
 - ✅ Kalender Islam
@@ -473,13 +473,13 @@ Fitur-fitur berikut secara eksplisit **TIDAK** akan dibuat untuk menjaga keseder
 - ✅ **BONUS:** Notifikasi Adzan
 - ✅ **BONUS:** Smart Caching System
 
-### Phase 2: Polish & Optimization (Current - Nov 2024)
+### Phase 2: Polish & Optimization (Current - Nov 2025)
 - ⏳ Bug fixes & performance optimization
 - ⏳ UI/UX refinements
 - ⏳ Doa Harian (completion of MVP)
 - ⏳ Documentation & testing
 
-### Phase 3: Monetization (Target: Dec 2024 - Jan 2025)
+### Phase 3: Monetization (Target: Dec 2025 - Jan 2026)
 - 📋 AdMob integration
 - 📋 Google Play Billing setup
 - 📋 Premium paywall UI
@@ -487,14 +487,14 @@ Fitur-fitur berikut secara eksplisit **TIDAK** akan dibuat untuk menjaga keseder
 - 📋 Subscription management
 - 📋 Analytics & tracking
 
-### Phase 4: Premium Features Expansion (Target: Feb - Mar 2025)
+### Phase 4: Premium Features Expansion (Target: Feb - Mar 2026)
 - 📋 Cloud Backup & Sync
 - 📋 Statistik Keuangan advanced
 - 📋 Custom Themes
 - 📋 Widget Premium
 - 📋 Multiple Qari options
 
-### Phase 5: Growth & Scaling (Target: Apr - Jun 2025)
+### Phase 5: Growth & Scaling (Target: Apr - Jun 2026)
 - 📋 Marketing campaign
 - 📋 User feedback iteration
 - 📋 A/B testing optimization
@@ -586,10 +586,10 @@ Fitur-fitur berikut secara eksplisit **TIDAK** akan dibuat untuk menjaga keseder
 
 | Tanggal     | Feedback From | Feedback                                                      | Action Taken                                        |
 | :---------- | :------------ | :------------------------------------------------------------ | :-------------------------------------------------- |
-| 3 Nov 2024  | Dosen         | Tambahkan monetisasi: ads (non-intrusive) + premium features | ✅ Added monetization strategy to PRD                |
-| 3 Nov 2024  | Dosen         | Premium feature suggestion: Pencatatan Kas Islami            | ✅ Added financial tracker as premium feature        |
-| 3 Nov 2024  | Dosen         | Key features (jadwal sholat & kiblat) harus protected        | ✅ Defined protected zones: NO ADS on Home & Qibla   |
-| 3 Nov 2024  | Dosen         | Model bisnis: subscription-based                             | ✅ Designed freemium + subscription model            |
+| 3 Nov 2025  | Dosen         | Tambahkan monetisasi: ads (non-intrusive) + premium features | ✅ Added monetization strategy to PRD                |
+| 3 Nov 2025  | Dosen         | Premium feature suggestion: Pencatatan Kas Islami            | ✅ Added financial tracker as premium feature        |
+| 3 Nov 2025  | Dosen         | Key features (jadwal sholat & kiblat) harus protected        | ✅ Defined protected zones: NO ADS on Home & Qibla   |
+| 3 Nov 2025  | Dosen         | Model bisnis: subscription-based                             | ✅ Designed freemium + subscription model            |
 
 ### D. Contact & Support
 
@@ -601,7 +601,7 @@ Fitur-fitur berikut secara eksplisit **TIDAK** akan dibuat untuk menjaga keseder
 - Universitas Islam Nahdlatul Ulama Jepara
 - Program Studi: Teknik Informatika
 - Mata Kuliah: Pemrograman Mobile Lanjut
-- Semester: 7 (Ganjil 2024/2025)
+- Semester: 7 (Ganjil 2025/2026)
 
 **Project Repository:**
 - GitHub: https://github.com/rioprastiawan/unisnu-pemrograman-mobile-lanjut-saku-muslim
@@ -616,7 +616,7 @@ Saku Muslim telah berhasil mencapai dan **melampaui target MVP** dengan implemen
 - ✅ **Premium tier** yang memberikan value jelas (ad-free + pencatatan kas)
 - ✅ **Ads placement** yang ethical dan tidak mengganggu ibadah
 
-### Immediate Next Steps (Phase 3 - Dec 2024)
+### Immediate Next Steps (Phase 3 - Dec 2025)
 
 1. **Week 1-2: Ads Integration**
    - Setup AdMob account
@@ -658,4 +658,4 @@ Menjadikan **Saku Muslim** sebagai aplikasi pendamping ibadah #1 di Indonesia de
 
 **Document End - PRD Version 2.0**
 
-*Last Updated: 3 November 2024*
+*Last Updated: 3 November 2025*
