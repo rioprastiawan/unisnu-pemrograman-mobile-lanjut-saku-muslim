@@ -38,38 +38,94 @@ Menjadi aplikasi pendamping ibadah harian yang paling **andal, ringan, dan mudah
 
 ### 🕕 Jadwal Sholat
 
-- Jadwal sholat harian (Imsak, Subuh, Dzuhur, Ashar, Maghrib, Isya) berdasarkan lokasi
-- Deteksi lokasi otomatis dengan GPS
-- Input lokasi manual untuk fleksibilitas
-- Penanda visual untuk waktu sholat berikutnya
-- **Data akurat** menggunakan metode kalkulasi Kemenag RI
+- Jadwal sholat harian 8 waktu (Imsak, Subuh, Terbit, Dhuha, Dzuhur, Ashar, Maghrib, Isya) berdasarkan lokasi
+- **Deteksi lokasi otomatis** dengan GPS menggunakan Geolocator & Geocoding
+- **Jam digital real-time** dengan animasi colon berkedip
+- **Countdown sholat selanjutnya** - menampilkan waktu tersisa hingga sholat berikutnya
+- Indikator visual untuk waktu sholat yang sudah lewat vs belum lewat
+- **Smart caching system** - data di-cache 10 menit untuk performa optimal
+- **Background auto-refresh** - otomatis refresh jika cache stale atau lokasi berubah
+- **Pull-to-refresh** manual untuk update data
+- Normalisasi otomatis nama kota (Kabupaten/Kota format)
+- Data dari **MyQuran API** - akurat untuk wilayah Indonesia
 
 ### 🧭 Arah Kiblat
 
-- Kompas interaktif yang menunjukkan arah Kiblat secara real-time
-- Informasi derajat arah Kiblat yang presisi
-- Menggunakan sensor magnetometer dan akselerometer perangkat
-- Kalkulasi berdasarkan koordinat Ka'bah yang akurat
+- **Kompas interaktif** real-time menggunakan sensor magnetometer dan akselerometer
+- Menampilkan **derajat arah Kiblat** dengan presisi tinggi
+- Kalkulasi **jarak ke Ka'bah** (Mekah) dalam kilometer
+- **Ikon Ka'bah** yang berputar mengikuti kompas menunjukkan arah Kiblat
+- Panah merah fixed sebagai indikator arah depan perangkat
+- **Custom compass painter** dengan mata angin Indonesia (U, S, T, B)
+- Instruksi penggunaan yang jelas dan mudah dipahami
+- Accessible via **Floating Action Button** di halaman Home
 
 ### 📅 Kalender Islam
 
-- Tampilan tanggal Masehi dan Hijriah secara bersamaan
-- Kalender bulanan dengan navigasi yang mudah
-- Sinkronisasi otomatis dengan data API
+- **Dual calendar system** - Masehi dan Hijriah ditampilkan bersamaan
+- **Toggle mode** - pilih Masehi atau Hijriyah sebagai tampilan utama
+- Setiap tanggal menampilkan **nomor ganda** (Masehi + Hijriyah)
+- Navigasi bulan dengan chevron kiri/kanan
+- Visual marker untuk hari ini (teal) dan tanggal dipilih (hijau)
+- Highlight weekend dengan warna merah
+- **Detail tanggal lengkap** saat cell diklik
+- **Bottom sheet jadwal sholat per tanggal** - lihat jadwal sholat tanggal tertentu
+- **FAB "Hari Ini"** untuk quick jump ke tanggal sekarang
+- Integrasi dengan library **Hijri Calendar** untuk akurasi tinggi
+- Cache jadwal sholat per tanggal
+
+### � Al-Qur'an Digital
+
+- **Daftar lengkap 114 Surah** dengan informasi:
+  - Nomor urut dengan badge gradient hijau
+  - Nama Arab (kanan) dan Nama Latin (kiri)
+  - Arti/terjemahan surah
+  - Jumlah ayat
+  - Tempat turun (Mekah/Madinah) dengan badge berwarna
+- **Detail Surah** dengan fitur lengkap:
+  - Header gradient dengan info surah
+  - **Audio player surah lengkap** (Qari: Mishari Rashid)
+  - Deskripsi surah dengan expand/collapse
+  - **List ayat** dengan format:
+    - Teks Arab (font besar, right-aligned, line height 2)
+    - Transliterasi Latin (italic, abu-abu)
+    - Terjemahan Indonesia (dalam box hijau muda)
+  - **Audio player per ayat** - play/pause dengan icon dinamis
+  - Status playing dengan visual feedback
+  - Navigasi surah sebelum/selanjutnya dengan **animasi slide**
+- **Smart caching** - cache 30 hari untuk daftar dan detail surah
+- Pull-to-refresh untuk update data
+- Data dari **Equran API** (equran.id)
 
 ### 🌟 Asmaul Husna
 
-- Daftar lengkap 99 nama Allah SWT
-- Tulisan Arab, transliterasi Latin, dan terjemahan Indonesia
-- Antarmuka yang mudah di-scroll dan dibaca
-- Data tersimpan lokal untuk akses offline
+- Daftar lengkap **99 Nama Allah SWT**
+- Setiap nama menampilkan:
+  - Nomor urut dengan badge gradient hijau
+  - **Nama Arab** (font besar, bold)
+  - **Transliterasi Latin** (uppercase, hijau, letter-spacing)
+  - **Terjemahan singkat** (abu-abu)
+- **Dialog detail** saat item diklik dengan:
+  - Badge nomor circular
+  - Nama Arab (font 32, bold)
+  - Nama Latin (uppercase)
+  - Terjemahan dalam box hijau muda
+  - **Makna/penjelasan lengkap** dalam box abu-abu
+- UI yang indah dan mudah dibaca
+- **Data lokal** - tidak perlu koneksi internet
 
-### 🤲 Doa Harian
+### 🔔 Notifikasi Adzan
 
-- Kumpulan doa-doa harian esensial
-- Kategorisasi doa untuk kemudahan navigasi
-- Format lengkap: Arab, Latin, dan terjemahan
-- Akses offline penuh
+- **Master toggle** - aktifkan/matikan semua notifikasi sekaligus
+- Pengaturan individual per waktu sholat:
+  - Subuh, Dzuhur, Ashar, Maghrib, Isya
+  - Toggle enable/disable per sholat
+  - Sub-setting **Suara** dan **Getar** per sholat
+- **Auto-schedule** - notifikasi dijadwalkan otomatis setiap hari
+- **Timezone aware** - menggunakan Asia/Jakarta timezone
+- **Test notification** - fitur test untuk cek fungsi notifikasi
+- Persistent settings menggunakan SQLite
+- Integrasi dengan **flutter_local_notifications**
 
 ## 🛠️ Teknologi
 
@@ -80,11 +136,20 @@ Menjadi aplikasi pendamping ibadah harian yang paling **andal, ringan, dan mudah
 
 ### Dependencies Utama
 
-- `provider` - State management
-- `http` / `dio` - HTTP client untuk API calls
-- `geolocator` - Akses lokasi GPS
-- `flutter_qiblah` - Fungsionalitas kompas kiblat
-- `shared_preferences` - Penyimpanan data lokal
+- `geolocator` ^14.0.2 - Akses lokasi GPS
+- `geocoding` ^4.0.0 - Reverse geocoding (koordinat ke nama kota)
+- `http` ^1.5.0 - HTTP client untuk API calls
+- `intl` ^0.20.2 - Internationalization dan date formatting
+- `permission_handler` ^12.0.1 - Handling permissions
+- `sqflite` ^2.4.1 - Local SQLite database untuk caching
+- `path` ^1.9.1 - Path manipulation
+- `shared_preferences` ^2.2.2 - Penyimpanan user settings
+- `table_calendar` ^3.2.0 - Calendar widget
+- `flutter_compass` ^0.8.1 - Compass sensor access
+- `hijri` ^3.0.0 - Kalender Hijriyah
+- `audioplayers` ^6.5.1 - Audio player untuk tilawah Al-Qur'an
+- `flutter_local_notifications` ^17.2.3 - Local notifications
+- `timezone` ^0.9.4 - Timezone handling untuk notifikasi
 
 ### Platform Target
 
@@ -93,38 +158,57 @@ Menjadi aplikasi pendamping ibadah harian yang paling **andal, ringan, dan mudah
 
 ### API External
 
-- **Al-Adhan API** (`aladhan.com`) - Data jadwal sholat dan kalender Hijriah
+- **MyQuran API** (`https://api.myquran.com/v2`)
+  - Data jadwal sholat untuk kota-kota di Indonesia
+  - Search kota/kabupaten
+  - Mendukung filter berdasarkan tanggal
+  
+- **Equran API** (`https://equran.id/api/v2`)
+  - Daftar 114 surah Al-Qur'an
+  - Detail surah dengan ayat lengkap
+  - Audio tilawah per ayat dan surah lengkap (Qari: Mishari Rashid)
 
 ## 🏗️ Arsitektur
 
-Aplikasi menggunakan **Feature-Driven MVVM** architecture pattern:
+Aplikasi menggunakan **Layered Architecture** dengan separation of concerns:
 
 ```
-┌─────────────────┐
-│      View       │ ← UI Layer (Flutter Widgets)
-│   (Widgets)     │
-└─────────────────┘
-         ↕
-┌─────────────────┐
-│   ViewModel     │ ← Business Logic Layer
-│ (ChangeNotifier)│
-└─────────────────┘
-         ↕
-┌─────────────────┐
-│     Service     │ ← Data Access Layer
-│  (API, Local)   │
-└─────────────────┘
-         ↕
-┌─────────────────┐
-│     Model       │ ← Data Layer (PODOs)
-│    (PODOs)      │
-└─────────────────┘
+┌─────────────────────────────────┐
+│      Presentation Layer         │ ← UI (Pages & Widgets)
+│   - HomePage                    │
+│   - CalendarPage                │
+│   - QuranPage                   │
+│   - SurahDetailPage             │
+│   - AsmaulHusnaPage             │
+│   - SettingsPage                │
+└─────────────────────────────────┘
+              ↕
+┌─────────────────────────────────┐
+│      Business Logic Layer       │ ← Services
+│   - LocationService             │
+│   - PrayerTimeApiService        │
+│   - QuranApiService             │
+│   - QuranAudioService           │
+│   - QiblaService                │
+│   - NotificationService         │
+│   - DatabaseHelper              │
+└─────────────────────────────────┘
+              ↕
+┌─────────────────────────────────┐
+│         Data Layer              │ ← Models & Cache
+│   - Models (PODOs)              │
+│   - SQLite Database (Cache)     │
+│   - Shared Preferences          │
+│   - External APIs               │
+└─────────────────────────────────┘
 ```
 
 ### State Management
 
-- **Provider** untuk dependency injection dan state management
-- **ChangeNotifier** untuk reactive UI updates
+- **StatefulWidget** dengan `setState()` untuk UI updates
+- **Stream-based** untuk audio player state
+- **FutureBuilder & async/await** untuk asynchronous operations
+- **Database caching** untuk offline-first approach
 
 ## 🚀 Instalasi & Setup
 
@@ -140,7 +224,7 @@ Aplikasi menggunakan **Feature-Driven MVVM** architecture pattern:
 
    ```bash
    git clone https://github.com/rioprastiawan/unisnu-pemrograman-mobile-lanjut-saku-muslim.git
-   cd unisnu-pemrograman-mobile-lanjut-saku-muslim
+   cd unisnu-pemrograman-mobile-lanjut-saku-muslim/app
    ```
 
 2. **Install dependencies**
@@ -162,99 +246,183 @@ Aplikasi menggunakan **Feature-Driven MVVM** architecture pattern:
 ### Build untuk Production
 
 ```bash
+# Masuk ke folder app
+cd app
+
 # Android APK
 flutter build apk --release
 
-# Android App Bundle
+# Android App Bundle (untuk Google Play Store)
 flutter build appbundle --release
-
-# iOS (memerlukan Xcode)
-flutter build ios --release
 ```
+
+### Permissions Required
+
+Aplikasi membutuhkan permissions berikut (sudah dikonfigurasi di AndroidManifest.xml):
+
+- **Location** - Untuk deteksi lokasi otomatis jadwal sholat
+- **Internet** - Untuk mengambil data dari API
+- **Notifications** - Untuk notifikasi adzan
+- **Sensors** - Untuk kompas Kiblat (magnetometer)
 
 ## 📁 Struktur Project
 
 ```
-saku_muslim/
-├── lib/
-│   ├── app/                    # Konfigurasi aplikasi
-│   │   ├── config/            # Theme, routing
-│   │   └── constants/         # Konstanta aplikasi
+saku-muslim/
+├── app/                        # Folder aplikasi Flutter utama
+│   ├── lib/
+│   │   ├── main.dart          # Entry point aplikasi
+│   │   │
+│   │   ├── data/              # Static data
+│   │   │   └── asmaul_husna_data.dart
+│   │   │
+│   │   ├── models/            # Data models (PODOs)
+│   │   │   ├── asmaul_husna.dart
+│   │   │   ├── ayat.dart
+│   │   │   ├── city.dart
+│   │   │   ├── prayer_schedule.dart
+│   │   │   ├── prayer_time.dart
+│   │   │   └── surah.dart
+│   │   │
+│   │   ├── pages/             # UI Pages
+│   │   │   ├── splash_screen.dart
+│   │   │   ├── home_page.dart
+│   │   │   ├── calendar_page.dart
+│   │   │   ├── quran_page.dart
+│   │   │   ├── surah_detail_page.dart
+│   │   │   ├── asmaul_husna_page.dart
+│   │   │   ├── menu_page.dart
+│   │   │   └── settings_page.dart
+│   │   │
+│   │   ├── services/          # Business logic & API services
+│   │   │   ├── database_helper.dart
+│   │   │   ├── location_service.dart
+│   │   │   ├── prayer_time_api_service.dart
+│   │   │   ├── quran_api_service.dart
+│   │   │   ├── quran_audio_service.dart
+│   │   │   ├── qibla_service.dart
+│   │   │   └── notification_service.dart
+│   │   │
+│   │   └── widgets/           # Reusable widgets
+│   │       ├── qibla_compass.dart
+│   │       └── setting_widgets.dart
 │   │
-│   ├── core/                  # Core functionality
-│   │   ├── services/          # API, Location, Asset services
-│   │   ├── models/            # Data models
-│   │   └── utils/             # Utility functions
-│   │
-│   ├── features/              # Feature modules
-│   │   ├── home/              # Jadwal sholat
-│   │   ├── qibla/             # Arah kiblat
-│   │   ├── asmaul_husna/      # Asmaul Husna
-│   │   ├── daily_doa/         # Doa harian
-│   │   └── calendar/          # Kalender Islam
-│   │
-│   ├── shared_widgets/        # Reusable widgets
-│   └── main.dart              # Entry point
-│
-├── assets/
-│   └── data/                  # Static JSON data
-│       ├── asmaul_husna.json
-│       └── doa_harian.json
+│   ├── android/               # Android platform files
+│   ├── assets/                # Assets (icons, images)
+│   ├── test/                  # Unit tests
+│   └── pubspec.yaml           # Dependencies
 │
 ├── docs/                      # Project documentation
-│   ├── 1-PRD.md              # Product Requirements
+│   ├── 1-PRD.md              # Product Requirements Document
 │   ├── 2-ERD.md              # Entity Relationship Diagram
 │   ├── 3-SRS.md              # Software Requirements Specification
 │   ├── 4-SDD.md              # Software Design Document
 │   └── 5-Timeline.md         # Project timeline
 │
+├── web/                       # Web version (Nuxt.js) - separate project
 └── README.md                  # This file
 ```
 
 ## 🔌 API Reference
 
-### Al-Adhan API
+### MyQuran API
 
-**Base URL:** `http://api.aladhan.com/v1/`
+**Base URL:** `https://api.myquran.com/v2`
 
-#### Get Prayer Times
+#### Search City
 
 ```http
-GET /timings/{date}
+GET /sholat/kota/cari/{keyword}
 ```
 
-**Parameters:**
+**Response Example:**
 
-- `latitude` (required): Koordinat lintang
-- `longitude` (required): Koordinat bujur
-- `method`: Metode kalkulasi (default: 11 untuk Kemenag RI)
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": "1301",
+      "lokasi": "KAB. KUDUS"
+    }
+  ]
+}
+```
+
+#### Get Prayer Schedule
+
+```http
+GET /sholat/jadwal/{cityId}/{year}/{month}/{day}
+```
+
+**Response Example:**
+
+```json
+{
+  "status": true,
+  "data": {
+    "id": "1301",
+    "lokasi": "KAB. KUDUS",
+    "daerah": "Jawa Tengah",
+    "jadwal": {
+      "tanggal": "Minggu, 03/11/2024",
+      "imsak": "04:05",
+      "subuh": "04:15",
+      "terbit": "05:29",
+      "dhuha": "05:54",
+      "dzuhur": "11:44",
+      "ashar": "15:06",
+      "maghrib": "17:53",
+      "isya": "19:05",
+      "date": "2024-11-03"
+    }
+  }
+}
+```
+
+### Equran API
+
+**Base URL:** `https://equran.id/api/v2`
+
+#### Get All Surahs
+
+```http
+GET /surat
+```
 
 **Response Example:**
 
 ```json
 {
   "code": 200,
-  "status": "OK",
-  "data": {
-    "timings": {
-      "Fajr": "04:32",
-      "Sunrise": "05:46",
-      "Dhuhr": "11:57",
-      "Asr": "15:18",
-      "Maghrib": "17:59",
-      "Isha": "19:11"
-    },
-    "date": {
-      "hijri": {
-        "date": "10-04-1445",
-        "day": "10",
-        "month": { "en": "Rabīʿ al-thānī" },
-        "year": "1445"
+  "message": "Success",
+  "data": [
+    {
+      "nomor": 1,
+      "nama": "الفاتحة",
+      "namaLatin": "Al-Fatihah",
+      "jumlahAyat": 7,
+      "tempatTurun": "Mekah",
+      "arti": "Pembukaan",
+      "audioFull": {
+        "05": "https://equran.id/audio-full/01-mishary.mp3"
       }
     }
-  }
+  ]
 }
 ```
+
+#### Get Surah Detail
+
+```http
+GET /surat/{nomorSurah}
+```
+
+**Response includes:**
+- Surah information
+- Complete ayat list with Arabic text, Latin transliteration, and Indonesian translation
+- Audio URL per ayat and full surah
+- Previous/next surah navigation data
 
 ## 🤝 Kontribusi
 
@@ -269,9 +437,20 @@ Kami menyambut kontribusi dari komunitas! Berikut cara berkontribusi:
 ### Guidelines
 
 - Ikuti struktur arsitektur yang sudah ada
-- Pastikan kode sudah ditest
-- Tulis commit message yang jelas
+- Gunakan naming conventions yang konsisten
+- Tambahkan comments untuk logic yang complex
+- Test fitur baru sebelum PR
 - Update dokumentasi jika diperlukan
+- Keep PR focused (satu fitur per PR)
+
+### Areas for Contribution
+
+- 🐛 Bug fixes
+- 🎨 UI/UX improvements
+- 🧪 Writing tests
+- 📝 Documentation improvements
+- 🌐 Localization (Arabic, English, etc.)
+- ✨ New features (lihat roadmap di Fitur Mendatang)
 
 ## 👥 Tim Pengembang
 
@@ -303,13 +482,89 @@ Untuk penggunaan komersial atau distribusi, silakan hubungi tim pengembang.
 
 ---
 
+## 🎨 Tech Stack Summary
+
+**Frontend (Mobile)**
+- Flutter 3.9.2+ (Dart)
+- Material Design 3
+- SQLite untuk caching
+- AudioPlayers untuk tilawah
+- Flutter Compass untuk Kiblat
+
+**APIs**
+- MyQuran API - Jadwal sholat
+- Equran API - Al-Qur'an digital
+
+**Services**
+- Geolocator - GPS Location
+- Local Notifications - Adzan reminders
+- Timezone - Scheduling
+
+---
+
+## 🚀 Quick Start Commands
+
+```bash
+# Clone & Setup
+git clone https://github.com/rioprastiawan/unisnu-pemrograman-mobile-lanjut-saku-muslim.git
+cd unisnu-pemrograman-mobile-lanjut-saku-muslim/app
+flutter pub get
+
+# Run
+flutter run
+
+# Build APK
+flutter build apk --release
+
+# Clean
+flutter clean
+```
+
+---
+
 ## 🌟 Fitur Mendatang (Post-MVP)
 
-- 🔔 Notifikasi Adzan
-- 📿 Tasbih Digital
-- 🗺️ Masjid Terdekat
-- 📰 Artikel Islami Ringkas
-- ⚙️ Pengaturan Lanjutan
+- � **Tasbih Digital** - Counter digital untuk dzikir
+- 🗺️ **Masjid Terdekat** - Pencarian masjid di sekitar menggunakan Google Maps API
+- 🤲 **Doa Harian** - Kumpulan doa-doa sehari-hari lengkap
+- 💰 **Kalkulator Zakat** - Hitung zakat fitrah dan mal
+- � **Artikel Islami** - Konten edukatif ringan
+- ⚙️ **Pengaturan Lanjutan** - Tema, bahasa, dll
+- 🔊 **Pilihan Qari** - Multiple qari untuk audio Al-Qur'an
+- 📱 **Widget** - Home screen widget untuk jadwal sholat
+- 🌙 **Ramadan Features** - Jadwal imsakiyah, niat puasa, dll
+
+---
+
+## � Database Schema
+
+Aplikasi menggunakan **SQLite** dengan 5 tabel utama:
+
+### 1. location_cache
+Menyimpan cache lokasi user terakhir
+- `id`, `city_id`, `city_name`, `latitude`, `longitude`, `last_updated`
+
+### 2. prayer_schedule_cache
+Cache jadwal sholat per tanggal dan kota
+- `id`, `city_id`, `date`, `prayer_data` (JSON), `last_updated`
+
+### 3. surah_cache
+Cache daftar 114 surah
+- `nomor`, `nama`, `namaLatin`, `arti`, `jumlahAyat`, `tempatTurun`, `audioFull`, `last_updated`
+
+### 4. surah_detail_cache
+Cache detail surah dengan ayat-ayat
+- `nomor`, `detail_data` (JSON), `last_updated`
+
+### 5. notification_settings
+Pengaturan notifikasi per sholat
+- `id`, `prayer_name`, `is_enabled`, `sound_enabled`, `vibrate_enabled`
+
+### Cache Strategy
+- **Location**: 10 menit validity, auto-refresh jika lokasi berubah > 5km
+- **Prayer Schedule**: 10 menit validity per tanggal
+- **Surah Data**: 30 hari validity
+- **Auto Cleanup**: Hapus schedule lama otomatis
 
 ---
 
