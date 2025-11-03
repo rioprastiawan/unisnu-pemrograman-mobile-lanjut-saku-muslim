@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/database_helper.dart';
 import '../services/prayer_time_api_service.dart';
 import '../models/prayer_schedule.dart';
@@ -20,12 +21,32 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, bool> _cachedDates = {};
+  bool _isHijriPrimary = false; // false = Masehi primary, true = Hijri primary
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _loadCalendarPreference();
     _loadCachedDates();
+  }
+
+  // Load calendar mode preference
+  Future<void> _loadCalendarPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isHijriPrimary = prefs.getBool('calendar_hijri_primary') ?? false;
+    
+    if (mounted) {
+      setState(() {
+        _isHijriPrimary = isHijriPrimary;
+      });
+    }
+  }
+
+  // Save calendar mode preference
+  Future<void> _saveCalendarPreference(bool isHijriPrimary) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('calendar_hijri_primary', isHijriPrimary);
   }
 
   // Load dates that have cached prayer schedule
@@ -78,6 +99,36 @@ class _CalendarPageState extends State<CalendarPage> {
     });
   }
 
+  // Build toggle button for calendar mode
+  Widget _buildToggleButton(String label, bool isActive) {
+    return InkWell(
+      onTap: () async {
+        final newValue = label == 'Hijriyah';
+        setState(() {
+          _isHijriPrimary = newValue;
+        });
+        // Save preference
+        await _saveCalendarPreference(newValue);
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.green.shade600 : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.green.shade700,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final showFAB = !_isViewingCurrentMonth();
@@ -101,13 +152,31 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
             child: Column(
               children: [
+                // Calendar mode toggle
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildToggleButton('Masehi', !_isHijriPrimary),
+                      _buildToggleButton('Hijriyah', _isHijriPrimary),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.calendar_month, color: Colors.green),
                     const SizedBox(width: 8),
                     Text(
-                      _getMonthName(_focusedDay),
+                      _isHijriPrimary 
+                          ? _getHijriMonthName(HijriCalendar.fromDate(_focusedDay))
+                          : _getMonthName(_focusedDay),
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -118,7 +187,9 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _getHijriMonthName(HijriCalendar.fromDate(_focusedDay)),
+                  _isHijriPrimary 
+                      ? _getMonthName(_focusedDay)
+                      : _getHijriMonthName(HijriCalendar.fromDate(_focusedDay)),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.green.shade700,
@@ -244,9 +315,10 @@ class _CalendarPageState extends State<CalendarPage> {
         headerStyle: HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          titleTextStyle: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
+          titleTextStyle: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.green.shade900,
           ),
           leftChevronIcon: Icon(
             Icons.chevron_left,
@@ -256,16 +328,43 @@ class _CalendarPageState extends State<CalendarPage> {
             Icons.chevron_right,
             color: Colors.green.shade700,
           ),
+          // Custom title formatter based on mode
+          titleTextFormatter: (date, locale) {
+            if (_isHijriPrimary) {
+              final hijri = HijriCalendar.fromDate(date);
+              final hijriMonths = [
+                'Muharram', 'Safar', 'Rabi\'ul Awwal', 'Rabi\'ul Akhir',
+                'Jumadal Ula', 'Jumadal Akhir', 'Rajab', 'Sya\'ban',
+                'Ramadan', 'Syawal', 'Dzulqa\'dah', 'Dzulhijjah'
+              ];
+              return '${hijriMonths[hijri.hMonth - 1]} ${hijri.hYear} H';
+            } else {
+              final months = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+              ];
+              return '${months[date.month - 1]} ${date.year}';
+            }
+          },
         ),
         
         daysOfWeekStyle: DaysOfWeekStyle(
+          dowTextFormatter: (date, locale) {
+            // Custom day names based on mode
+            final dayNames = _isHijriPrimary 
+                ? ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Kamis', 'Jumaat', 'Sabtu']
+                : ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            return dayNames[date.weekday % 7];
+          },
           weekdayStyle: TextStyle(
             color: Colors.green.shade700,
             fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
           weekendStyle: TextStyle(
             color: Colors.red.shade600,
             fontWeight: FontWeight.bold,
+            fontSize: 12,
           ),
         ),
         
@@ -331,6 +430,10 @@ class _CalendarPageState extends State<CalendarPage> {
       hijriTextColor = Colors.grey.shade600;
     }
     
+    // Swap primary and secondary based on mode
+    final primaryText = _isHijriPrimary ? hijriDate : '${day.day}';
+    final secondaryText = _isHijriPrimary ? '${day.day}' : hijriDate;
+    
     return Container(
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -342,7 +445,7 @@ class _CalendarPageState extends State<CalendarPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '${day.day}',
+              primaryText,
               style: TextStyle(
                 color: textColor,
                 fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
@@ -351,7 +454,7 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
             const SizedBox(height: 2),
             Text(
-              hijriDate,
+              secondaryText,
               style: TextStyle(
                 color: hijriTextColor,
                 fontSize: 10,
