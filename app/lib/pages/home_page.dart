@@ -178,8 +178,13 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // Search for city in API
-      final cities = await _prayerApiService.searchCity(cityName);
+      // Normalize city name to match API format
+      // "Kabupaten Kudus" -> "KAB. KUDUS"
+      // "Kota Semarang" -> "KOTA SEMARANG"
+      final normalizedCityName = _locationService.normalizeForApiSearch(cityName);
+
+      // Search for city in API using normalized name
+      final cities = await _prayerApiService.searchCity(normalizedCityName);
       
       if (cities.isEmpty) {
         if (!isBackground) {

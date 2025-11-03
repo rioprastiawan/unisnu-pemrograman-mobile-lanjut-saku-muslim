@@ -69,6 +69,32 @@ class LocationService {
     }
   }
 
+  // Normalize city name to match API format
+  // Transform "Kabupaten X" -> "KAB. X"
+  // Keep "Kota X" as "KOTA X" (uppercase)
+  // Keep plain city name as is
+  String normalizeForApiSearch(String cityName) {
+    // Trim whitespace
+    String normalized = cityName.trim();
+    
+    // Check if starts with "Kabupaten " (with space)
+    if (normalized.toLowerCase().startsWith('kabupaten ')) {
+      // Remove "Kabupaten " and add "KAB. " prefix
+      String cityCore = normalized.substring(10).trim(); // Remove "Kabupaten "
+      return 'KAB. ${cityCore.toUpperCase()}';
+    }
+    
+    // Check if starts with "Kota " (with space)
+    if (normalized.toLowerCase().startsWith('kota ')) {
+      // Keep as "KOTA X" format
+      String cityCore = normalized.substring(5).trim(); // Remove "Kota "
+      return 'KOTA ${cityCore.toUpperCase()}';
+    }
+    
+    // If no prefix, return uppercase
+    return normalized.toUpperCase();
+  }
+
   // Get full location info
   Future<Map<String, dynamic>?> getLocationInfo() async {
     try {
