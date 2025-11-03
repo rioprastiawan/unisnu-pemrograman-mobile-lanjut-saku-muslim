@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:hijri/hijri_calendar.dart';
 import '../services/database_helper.dart';
 import '../services/prayer_time_api_service.dart';
 import '../models/prayer_schedule.dart';
@@ -46,6 +47,22 @@ class _CalendarPageState extends State<CalendarPage> {
     return '${months[date.month - 1]} ${date.year}';
   }
 
+  // Get Hijri month name in Indonesian
+  String _getHijriMonthName(HijriCalendar hijri) {
+    final List<String> hijriMonths = [
+      'Muharram', 'Safar', 'Rabi\'ul Awwal', 'Rabi\'ul Akhir',
+      'Jumadal Ula', 'Jumadal Akhir', 'Rajab', 'Sya\'ban',
+      'Ramadan', 'Syawal', 'Dzulqa\'dah', 'Dzulhijjah'
+    ];
+    return '${hijriMonths[hijri.hMonth - 1]} ${hijri.hYear} H';
+  }
+
+  // Convert DateTime to Hijri date string
+  String _toHijriDateString(DateTime date) {
+    final hijri = HijriCalendar.fromDate(date);
+    return '${hijri.hDay}';
+  }
+
   // Check if currently viewing today's month
   bool _isViewingCurrentMonth() {
     final now = DateTime.now();
@@ -82,17 +99,30 @@ class _CalendarPageState extends State<CalendarPage> {
                 bottom: BorderSide(color: Colors.green.shade200, width: 1),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
               children: [
-                const Icon(Icons.calendar_month, color: Colors.green),
-                const SizedBox(width: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.calendar_month, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text(
+                      _getMonthName(_focusedDay),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Text(
-                  _getMonthName(_focusedDay),
+                  _getHijriMonthName(HijriCalendar.fromDate(_focusedDay)),
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade900,
+                    fontSize: 14,
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -250,6 +280,86 @@ class _CalendarPageState extends State<CalendarPage> {
         
         // Locale
         locale: 'id_ID',
+        
+        // Custom cell builder for dual calendar
+        calendarBuilders: CalendarBuilders(
+          defaultBuilder: (context, day, focusedDay) {
+            return _buildCalendarCell(day, isToday: false, isSelected: false, isOutside: false);
+          },
+          todayBuilder: (context, day, focusedDay) {
+            return _buildCalendarCell(day, isToday: true, isSelected: false, isOutside: false);
+          },
+          selectedBuilder: (context, day, focusedDay) {
+            return _buildCalendarCell(day, isToday: false, isSelected: true, isOutside: false);
+          },
+          outsideBuilder: (context, day, focusedDay) {
+            return _buildCalendarCell(day, isToday: false, isSelected: false, isOutside: true);
+          },
+        ),
+      ),
+    );
+  }
+
+  // Build custom calendar cell with Hijri date
+  Widget _buildCalendarCell(DateTime day, {required bool isToday, required bool isSelected, required bool isOutside}) {
+    final hijriDate = _toHijriDateString(day);
+    final isWeekend = day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
+    
+    Color backgroundColor;
+    Color textColor;
+    Color hijriTextColor;
+    
+    if (isSelected) {
+      backgroundColor = Colors.green.shade600;
+      textColor = Colors.white;
+      hijriTextColor = Colors.white.withOpacity(0.8);
+    } else if (isToday) {
+      backgroundColor = Colors.teal.shade400;
+      textColor = Colors.white;
+      hijriTextColor = Colors.white.withOpacity(0.8);
+    } else if (isOutside) {
+      backgroundColor = Colors.transparent;
+      textColor = Colors.grey.shade400;
+      hijriTextColor = Colors.grey.shade300;
+    } else if (isWeekend) {
+      backgroundColor = Colors.transparent;
+      textColor = Colors.red.shade600;
+      hijriTextColor = Colors.red.shade300;
+    } else {
+      backgroundColor = Colors.transparent;
+      textColor = Colors.black87;
+      hijriTextColor = Colors.grey.shade600;
+    }
+    
+    return Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${day.day}',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              hijriDate,
+              style: TextStyle(
+                color: hijriTextColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -325,6 +435,15 @@ class _CalendarPageState extends State<CalendarPage> {
     final monthName = months[_selectedDay!.month - 1];
     final dateString = '$dayName, ${_selectedDay!.day} $monthName ${_selectedDay!.year}';
     
+    // Get Hijri date
+    final hijri = HijriCalendar.fromDate(_selectedDay!);
+    final hijriMonthNames = [
+      'Muharram', 'Safar', 'Rabi\'ul Awwal', 'Rabi\'ul Akhir',
+      'Jumadal Ula', 'Jumadal Akhir', 'Rajab', 'Sya\'ban',
+      'Ramadan', 'Syawal', 'Dzulqa\'dah', 'Dzulhijjah'
+    ];
+    final hijriDateString = '${hijri.hDay} ${hijriMonthNames[hijri.hMonth - 1]} ${hijri.hYear} H';
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -348,14 +467,41 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            // Masehi date
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    dateString,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.green.shade900,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
-            Text(
-              dateString,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.green.shade900,
-                fontWeight: FontWeight.w600,
-              ),
+            // Hijri date
+            Row(
+              children: [
+                Icon(Icons.mosque, size: 16, color: Colors.green.shade600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hijriDateString,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -528,6 +674,16 @@ class _PrayerScheduleBottomSheetState extends State<_PrayerScheduleBottomSheet> 
     return '$dayName, ${widget.selectedDate.day} $monthName ${widget.selectedDate.year}';
   }
 
+  String _formatHijriDate() {
+    final hijri = HijriCalendar.fromDate(widget.selectedDate);
+    final hijriMonthNames = [
+      'Muharram', 'Safar', 'Rabi\'ul Awwal', 'Rabi\'ul Akhir',
+      'Jumadal Ula', 'Jumadal Akhir', 'Rajab', 'Sya\'ban',
+      'Ramadan', 'Syawal', 'Dzulqa\'dah', 'Dzulhijjah'
+    ];
+    return '${hijri.hDay} ${hijriMonthNames[hijri.hMonth - 1]} ${hijri.hYear} H';
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -571,13 +727,33 @@ class _PrayerScheduleBottomSheetState extends State<_PrayerScheduleBottomSheet> 
                         Icon(Icons.event, color: Colors.green.shade700, size: 24),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            _formatDate(),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade900,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatDate(),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(Icons.mosque, size: 14, color: Colors.green.shade600),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _formatHijriDate(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                         IconButton(
@@ -587,7 +763,7 @@ class _PrayerScheduleBottomSheetState extends State<_PrayerScheduleBottomSheet> 
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(Icons.location_on, size: 16, color: Colors.green.shade600),
