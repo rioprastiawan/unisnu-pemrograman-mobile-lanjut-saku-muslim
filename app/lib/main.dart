@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/home_page.dart';
 import 'pages/calendar_page.dart';
 import 'pages/quran_page.dart';
 import 'pages/menu_page.dart';
 import 'pages/splash_screen.dart';
+import 'pages/onboarding_page.dart';
+import 'pages/notification_test_page.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -31,6 +34,11 @@ class SakuMuslimApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
+      routes: {
+        '/home': (context) => const MainPage(),
+        '/onboarding': (context) => const OnboardingPage(),
+        '/notification-test': (context) => const NotificationTestPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

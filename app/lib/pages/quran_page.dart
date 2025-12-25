@@ -3,6 +3,7 @@ import '../models/surah.dart';
 import '../services/quran_api_service.dart';
 import '../services/database_helper.dart';
 import 'surah_detail_page.dart';
+import 'favorite_ayat_page.dart';
 
 class QuranPage extends StatefulWidget {
   const QuranPage({super.key});
@@ -18,11 +19,29 @@ class _QuranPageState extends State<QuranPage> {
   List<Surah> _surahs = [];
   bool _isLoading = true;
   String? _errorMessage;
+  Map<String, dynamic>? _lastRead;
+  int _favoriteCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadSurahs();
+    _loadLastRead();
+    _loadFavoriteCount();
+  }
+
+  Future<void> _loadLastRead() async {
+    final lastRead = await _dbHelper.getLastReadQuran();
+    setState(() {
+      _lastRead = lastRead;
+    });
+  }
+
+  Future<void> _loadFavoriteCount() async {
+    final count = await _dbHelper.getFavoriteAyatCount();
+    setState(() {
+      _favoriteCount = count;
+    });
   }
 
   Future<void> _loadSurahs() async {
@@ -110,8 +129,74 @@ class _QuranPageState extends State<QuranPage> {
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // Favorite button with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.favorite),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FavoriteAyatPage(),
+                    ),
+                  ).then((_) {
+                    _loadFavoriteCount();
+                  });
+                },
+                tooltip: 'Ayat Favorit',
+              ),
+              if (_favoriteCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade600,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      _favoriteCount > 99 ? '99+' : _favoriteCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
       body: _buildBody(),
+      floatingActionButton: _lastRead != null
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SurahDetailPage(
+                      nomorSurah: _lastRead!['surah_number'],
+                      namaSurah: _lastRead!['surah_name'],
+                      scrollToAyat: _lastRead!['ayat_number'],
+                    ),
+                  ),
+                ).then((_) => _loadLastRead());
+              },
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.bookmark),
+              label: const Text('Terakhir Dibaca'),
+            )
+          : null,
     );
   }
 
@@ -179,7 +264,10 @@ class _QuranPageState extends State<QuranPage> {
                 namaSurah: surah.namaLatin,
               ),
             ),
-          );
+          ).then((_) {
+            _loadLastRead();
+            _loadFavoriteCount();
+          });
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

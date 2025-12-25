@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'asmaul_husna_page.dart';
 import 'settings_page.dart';
+import 'favorite_ayat_page.dart';
+import 'about_page.dart';
+import 'privacy_policy_page.dart';
+import 'doa_list_page.dart';
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -50,6 +54,22 @@ class MenuPage extends StatelessWidget {
           const SizedBox(height: 12),
           _buildMenuCard(
             context,
+            icon: Icons.favorite,
+            title: 'Ayat Favorit',
+            subtitle: 'Koleksi ayat Al-Qur\'an favorit Anda',
+            color: Colors.pink,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FavoriteAyatPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMenuCard(
+            context,
             icon: Icons.mosque,
             title: 'Masjid Terdekat',
             subtitle: 'Temukan masjid di sekitar Anda',
@@ -69,9 +89,11 @@ class MenuPage extends StatelessWidget {
             subtitle: 'Kumpulan dzikir dan doa harian',
             color: Colors.purple,
             onTap: () {
-              // TODO: Implement dzikir & doa
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Coming soon...')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DoaListPage(),
+                ),
               );
             },
           ),
@@ -86,6 +108,54 @@ class MenuPage extends StatelessWidget {
               // TODO: Implement kalkulator zakat
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Coming soon...')),
+              );
+            },
+          ),
+          
+          // Divider for app info section
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              'Informasi Aplikasi',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          _buildMenuCard(
+            context,
+            icon: Icons.info_outline,
+            title: 'Tentang Aplikasi',
+            subtitle: 'Informasi versi dan credits',
+            color: Colors.blueGrey,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AboutPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMenuCard(
+            context,
+            icon: Icons.privacy_tip_outlined,
+            title: 'Kebijakan Privasi',
+            subtitle: 'Bagaimana kami melindungi data Anda',
+            color: Colors.blueGrey,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacyPolicyPage(),
+                ),
               );
             },
           ),

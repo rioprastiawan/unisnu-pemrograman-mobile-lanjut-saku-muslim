@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:flutter/services.dart';
 import '../models/prayer_time.dart';
 import 'database_helper.dart';
 
@@ -12,6 +13,8 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  
+  bool _isInitialized = false;
 
   // Notification IDs for each prayer
   static const Map<String, int> _notificationIds = {
@@ -24,14 +27,33 @@ class NotificationService {
 
   // Initialize notification service
   Future<void> initialize() async {
+    if (_isInitialized) return;
+    
     // Initialize timezone data
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
 
+    // Create notification channel for Android with custom sound
+    const androidChannel = AndroidNotificationChannel(
+      'adzan_channel',
+      'Adzan Notifications',
+      description: 'Notifications for prayer times with adzan sound',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      sound: RawResourceAndroidNotificationSound('adzan'),
+    );
+
+    // Register the channel
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
     // Android initialization settings
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS initialization settings
+    // iOS initialization settings  
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -50,6 +72,8 @@ class NotificationService {
 
     // Request permissions
     await _requestPermissions();
+    
+    _isInitialized = true;
   }
 
   // Request notification permissions
@@ -86,10 +110,12 @@ class NotificationService {
     print('Notification tapped: ${response.payload}');
   }
 
-  // Schedule all prayer notifications for today
+  // Schedule all prayer notifications for today and recurring
   Future<void> scheduleDailyPrayerNotifications(PrayerTime prayerTime) async {
     final settings = await _dbHelper.getAllNotificationSettings();
-    final now = DateTime.now();
+
+    // Cancel all existing notifications first
+    await cancelAllNotifications();
 
     for (final setting in settings) {
       if (setting['is_enabled'] == 1) {
@@ -99,24 +125,22 @@ class NotificationService {
         if (timeString != null) {
           final scheduledTime = _parseTimeString(timeString);
           
-          // Only schedule if time hasn't passed today
-          if (scheduledTime.isAfter(now)) {
-            await _scheduleNotification(
-              id: _notificationIds[prayerName]!,
-              title: 'Waktu ${_getPrayerDisplayName(prayerName)}',
-              body: 'Saatnya menunaikan sholat ${_getPrayerDisplayName(prayerName)}',
-              scheduledTime: scheduledTime,
-              soundEnabled: setting['sound_enabled'] == 1,
-              vibrateEnabled: setting['vibrate_enabled'] == 1,
-            );
-          }
+          // Schedule for today and recurring daily
+          await _scheduleRecurringNotification(
+            id: _notificationIds[prayerName]!,
+            title: 'Waktu ${_getPrayerDisplayName(prayerName)} Tiba',
+            body: 'Saatnya menunaikan sholat ${_getPrayerDisplayName(prayerName)} 🕌',
+            scheduledTime: scheduledTime,
+            soundEnabled: setting['sound_enabled'] == 1,
+            vibrateEnabled: setting['vibrate_enabled'] == 1,
+          );
         }
       }
     }
   }
 
-  // Schedule a single notification
-  Future<void> _scheduleNotification({
+  // Schedule a recurring daily notification
+  Future<void> _scheduleRecurringNotification({
     required int id,
     required String title,
     required String body,
@@ -124,23 +148,35 @@ class NotificationService {
     bool soundEnabled = true,
     bool vibrateEnabled = true,
   }) async {
-    final tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
+    final now = DateTime.now();
+    var scheduleDate = scheduledTime;
+    
+    // If time has passed today, schedule for tomorrow
+    if (scheduleDate.isBefore(now)) {
+      scheduleDate = scheduleDate.add(const Duration(days: 1));
+    }
+    
+    final tzScheduledTime = tz.TZDateTime.from(scheduleDate, tz.local);
 
     final androidDetails = AndroidNotificationDetails(
-      'prayer_times',
-      'Prayer Times',
-      channelDescription: 'Notifications for prayer times',
+      'adzan_channel', // Use custom channel with adzan sound
+      'Adzan Notifications',
+      channelDescription: 'Notifications for prayer times with adzan sound',
       importance: Importance.high,
       priority: Priority.high,
       playSound: soundEnabled,
+      sound: soundEnabled ? const RawResourceAndroidNotificationSound('adzan') : null,
       enableVibration: vibrateEnabled,
       icon: '@mipmap/ic_launcher',
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
     );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      sound: 'adzan.mp3', // iOS custom sound
     );
 
     final notificationDetails = NotificationDetails(
@@ -148,6 +184,7 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // Schedule with daily recurring using matchDateTimeComponents
     await _notifications.zonedSchedule(
       id,
       title,
@@ -157,6 +194,7 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // This makes it recurring daily!
     );
   }
 
@@ -173,35 +211,43 @@ class NotificationService {
     await _notifications.cancelAll();
   }
 
-  // Show immediate notification (for testing)
+  // TEST: Show immediate notification (for testing only)
   Future<void> showImmediateNotification({
     required String title,
     required String body,
   }) async {
+    await initialize();
+    
     const androidDetails = AndroidNotificationDetails(
-      'prayer_times',
-      'Prayer Times',
-      channelDescription: 'Notifications for prayer times',
+      'adzan_channel',
+      'Adzan Notifications',
+      channelDescription: 'Notifications for prayer times with adzan sound',
       importance: Importance.high,
       priority: Priority.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('adzan'),
+      enableVibration: true,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
     );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      sound: 'adzan.mp3',
     );
 
-    const notificationDetails = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
     await _notifications.show(
-      0,
+      999,
       title,
       body,
-      notificationDetails,
+      details,
     );
   }
 

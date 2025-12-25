@@ -22,7 +22,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'saku_muslim.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -97,6 +97,32 @@ class DatabaseHelper {
         ('maghrib', 1, 1, 1),
         ('isya', 1, 1, 1)
     ''');
+
+    // Table for last read Quran
+    await db.execute('''
+      CREATE TABLE last_read_quran (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        surah_number INTEGER NOT NULL,
+        surah_name TEXT NOT NULL,
+        ayat_number INTEGER NOT NULL,
+        last_read_time INTEGER NOT NULL
+      )
+    ''');
+
+    // Table for favorite ayat
+    await db.execute('''
+      CREATE TABLE favorite_ayat (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        surah_number INTEGER NOT NULL,
+        surah_name TEXT NOT NULL,
+        ayat_number INTEGER NOT NULL,
+        ayat_text_arab TEXT NOT NULL,
+        ayat_text_latin TEXT NOT NULL,
+        ayat_text_indonesia TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        UNIQUE(surah_number, ayat_number)
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -146,6 +172,34 @@ class DatabaseHelper {
           ('ashar', 1, 1, 1),
           ('maghrib', 1, 1, 1),
           ('isya', 1, 1, 1)
+      ''');
+    }
+    if (oldVersion < 5) {
+      // Add last read quran table for version 5
+      await db.execute('''
+        CREATE TABLE last_read_quran (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          surah_number INTEGER NOT NULL,
+          surah_name TEXT NOT NULL,
+          ayat_number INTEGER NOT NULL,
+          last_read_time INTEGER NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 6) {
+      // Add favorite ayat table for version 6
+      await db.execute('''
+        CREATE TABLE favorite_ayat (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          surah_number INTEGER NOT NULL,
+          surah_name TEXT NOT NULL,
+          ayat_number INTEGER NOT NULL,
+          ayat_text_arab TEXT NOT NULL,
+          ayat_text_latin TEXT NOT NULL,
+          ayat_text_indonesia TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          UNIQUE(surah_number, ayat_number)
+        )
       ''');
     }
   }
@@ -426,6 +480,136 @@ class DatabaseHelper {
       'notification_settings',
       {'is_enabled': enabled ? 1 : 0},
     );
+  }
+
+  // ==================== LAST READ QURAN METHODS ====================
+  
+  // Save last read position
+  Future<void> saveLastReadQuran({
+    required int surahNumber,
+    required String surahName,
+    required int ayatNumber,
+  }) async {
+    final db = await database;
+    
+    // Delete any existing last read record (only keep one)
+    await db.delete('last_read_quran');
+    
+    // Insert new last read
+    await db.insert(
+      'last_read_quran',
+      {
+        'surah_number': surahNumber,
+        'surah_name': surahName,
+        'ayat_number': ayatNumber,
+        'last_read_time': DateTime.now().millisecondsSinceEpoch,
+      },
+    );
+  }
+  
+  // Get last read position
+  Future<Map<String, dynamic>?> getLastReadQuran() async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'last_read_quran',
+      orderBy: 'last_read_time DESC',
+      limit: 1,
+    );
+    
+    return results.isEmpty ? null : results.first;
+  }
+  
+  // Clear last read
+  Future<void> clearLastReadQuran() async {
+    final db = await database;
+    await db.delete('last_read_quran');
+  }
+
+  // ==================== FAVORITE AYAT METHODS ====================
+  
+  // Add ayat to favorites
+  Future<bool> addFavoriteAyat({
+    required int surahNumber,
+    required String surahName,
+    required int ayatNumber,
+    required String ayatTextArab,
+    required String ayatTextLatin,
+    required String ayatTextIndonesia,
+  }) async {
+    final db = await database;
+    
+    try {
+      await db.insert(
+        'favorite_ayat',
+        {
+          'surah_number': surahNumber,
+          'surah_name': surahName,
+          'ayat_number': ayatNumber,
+          'ayat_text_arab': ayatTextArab,
+          'ayat_text_latin': ayatTextLatin,
+          'ayat_text_indonesia': ayatTextIndonesia,
+          'created_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return true;
+    } catch (e) {
+      print('Error adding favorite ayat: $e');
+      return false;
+    }
+  }
+  
+  // Remove ayat from favorites
+  Future<bool> removeFavoriteAyat(int surahNumber, int ayatNumber) async {
+    final db = await database;
+    
+    try {
+      await db.delete(
+        'favorite_ayat',
+        where: 'surah_number = ? AND ayat_number = ?',
+        whereArgs: [surahNumber, ayatNumber],
+      );
+      return true;
+    } catch (e) {
+      print('Error removing favorite ayat: $e');
+      return false;
+    }
+  }
+  
+  // Check if ayat is favorited
+  Future<bool> isAyatFavorited(int surahNumber, int ayatNumber) async {
+    final db = await database;
+    
+    final List<Map<String, dynamic>> results = await db.query(
+      'favorite_ayat',
+      where: 'surah_number = ? AND ayat_number = ?',
+      whereArgs: [surahNumber, ayatNumber],
+      limit: 1,
+    );
+    
+    return results.isNotEmpty;
+  }
+  
+  // Get all favorite ayat
+  Future<List<Map<String, dynamic>>> getAllFavoriteAyat() async {
+    final db = await database;
+    return await db.query(
+      'favorite_ayat',
+      orderBy: 'created_at DESC',
+    );
+  }
+  
+  // Get favorite count
+  Future<int> getFavoriteAyatCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM favorite_ayat');
+    return (result.first['count'] as int?) ?? 0;
+  }
+  
+  // Clear all favorites
+  Future<void> clearAllFavoriteAyat() async {
+    final db = await database;
+    await db.delete('favorite_ayat');
   }
 
   Future<void> close() async {
