@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/notification_service.dart';
-import '../services/database_helper.dart';
 import '../models/prayer_time.dart';
 import 'package:intl/intl.dart';
 
@@ -13,7 +12,6 @@ class NotificationTestPage extends StatefulWidget {
 
 class _NotificationTestPageState extends State<NotificationTestPage> {
   final NotificationService _notificationService = NotificationService();
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   final TextEditingController _minutesController = TextEditingController(text: '1');
   final TimeOfDay _testTime = TimeOfDay.now();
   bool _isLoading = false;

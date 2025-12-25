@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -302,13 +303,23 @@ class _AboutPageState extends State<AboutPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Add feedback email
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur feedback akan segera hadir'),
-                      ),
+                  onPressed: () async {
+                    final Uri emailUri = Uri(
+                      scheme: 'mailto',
+                      path: 'akunviprio@gmail.com',
+                      query: 'subject=Feedback Saku Muslim App',
                     );
+                    if (await canLaunchUrl(emailUri)) {
+                      await launchUrl(emailUri);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tidak dapat membuka email client'),
+                          ),
+                        );
+                      }
+                    }
                   },
                   icon: const Icon(Icons.feedback),
                   label: const Text('Feedback'),
@@ -323,11 +334,11 @@ class _AboutPageState extends State<AboutPage> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // TODO: Add share app link
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bagikan Saku Muslim ke teman-teman!'),
-                      ),
+                    // Share app with Play Store link (update after publishing)
+                    Share.share(
+                      'Coba aplikasi Saku Muslim! '
+                      'Jadwal sholat, Al-Qur\'an, doa & dzikir, dan fitur islami lainnya.\n\n'
+                      'Download: https://play.google.com/store/apps/details?id=me.rioprastiawan.saku_muslim',
                     );
                   },
                   icon: const Icon(Icons.share),

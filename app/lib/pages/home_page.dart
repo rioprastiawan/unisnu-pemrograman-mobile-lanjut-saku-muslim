@@ -104,7 +104,7 @@ class _HomePageState extends State<HomePage> {
       
       return true;
     } catch (e) {
-      print('Error loading from cache: $e');
+
       return false;
     }
   }
@@ -133,7 +133,7 @@ class _HomePageState extends State<HomePage> {
         await _fetchFreshData(isBackground: true);
       }
     } catch (e) {
-      print('Error checking refresh: $e');
+      // Silently handle refresh check errors
     }
   }
 
@@ -250,7 +250,7 @@ class _HomePageState extends State<HomePage> {
       try {
         await _notificationService.scheduleDailyPrayerNotifications(schedule.jadwal);
       } catch (e) {
-        print('Error scheduling notifications: $e');
+        // Silently handle notification scheduling errors
       }
     } catch (e) {
       if (!isBackground) {
@@ -263,7 +263,6 @@ class _HomePageState extends State<HomePage> {
           _isRefreshing = false;
         });
       }
-      print('Error fetching fresh data: $e');
     }
   }
 
@@ -284,7 +283,6 @@ class _HomePageState extends State<HomePage> {
       // If moved more than 5km, consider location changed
       return distance > 5000;
     } catch (e) {
-      print('Error checking location change: $e');
       return false;
     }
   }

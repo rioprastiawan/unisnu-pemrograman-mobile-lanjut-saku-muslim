@@ -12,7 +12,6 @@ class DoaListPage extends StatefulWidget {
 
 class _DoaListPageState extends State<DoaListPage> with SingleTickerProviderStateMixin {
   final DoaService _doaService = DoaService();
-  List<Doa> _allDoa = [];
   Map<String, List<Doa>> _groupedDoa = {};
   bool _isLoading = true;
   String _searchQuery = '';
@@ -47,7 +46,6 @@ class _DoaListPageState extends State<DoaListPage> with SingleTickerProviderStat
       }
       
       setState(() {
-        _allDoa = doa;
         _groupedDoa = grouped;
         _isLoading = false;
       });

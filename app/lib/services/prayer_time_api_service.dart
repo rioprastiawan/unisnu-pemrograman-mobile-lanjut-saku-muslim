@@ -24,7 +24,6 @@ class PrayerTimeApiService {
       
       return [];
     } catch (e) {
-      print('Error searching city: $e');
       return [];
     }
   }
@@ -46,7 +45,6 @@ class PrayerTimeApiService {
       
       return null;
     } catch (e) {
-      print('Error getting city by ID: $e');
       return null;
     }
   }
@@ -69,7 +67,6 @@ class PrayerTimeApiService {
       
       return [];
     } catch (e) {
-      print('Error getting all cities: $e');
       return [];
     }
   }
@@ -91,7 +88,6 @@ class PrayerTimeApiService {
       
       return null;
     } catch (e) {
-      print('Error getting prayer schedule: $e');
       return null;
     }
   }
@@ -118,7 +114,6 @@ class PrayerTimeApiService {
       
       return null;
     } catch (e) {
-      print('Error getting prayer schedule: $e');
       return null;
     }
   }

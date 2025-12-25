@@ -44,7 +44,6 @@ class LocationService {
 
       return position;
     } catch (e) {
-      print('Error getting location: $e');
       return null;
     }
   }
@@ -64,7 +63,7 @@ class LocationService {
       
       return null;
     } catch (e) {
-      print('Error getting city name: $e');
+
       return null;
     }
   }
@@ -114,7 +113,6 @@ class LocationService {
         'cityName': cityName,
       };
     } catch (e) {
-      print('Error getting location info: $e');
       return null;
     }
   }

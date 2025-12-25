@@ -554,7 +554,7 @@ class DatabaseHelper {
       );
       return true;
     } catch (e) {
-      print('Error adding favorite ayat: $e');
+
       return false;
     }
   }
@@ -571,7 +571,7 @@ class DatabaseHelper {
       );
       return true;
     } catch (e) {
-      print('Error removing favorite ayat: $e');
+
       return false;
     }
   }

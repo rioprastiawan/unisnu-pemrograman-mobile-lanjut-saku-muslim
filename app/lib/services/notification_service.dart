@@ -1,7 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:flutter/services.dart';
 import '../models/prayer_time.dart';
 import 'database_helper.dart';
 
@@ -106,8 +105,6 @@ class NotificationService {
   // Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
     // Handle notification tap - could navigate to specific page
-    // For now, just log it
-    print('Notification tapped: ${response.payload}');
   }
 
   // Schedule all prayer notifications for today and recurring
