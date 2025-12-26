@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kebijakan Privasi Saku Muslim - Aplikasi islami untuk jadwal sholat, Al-Qur'an, doa & dzikir, dan kompas kiblat">
+    <title>Kebijakan Privasi - Saku Muslim</title>
+    <link rel="icon" type="image/png" href="./assets/icon/app_icon.png">
+    <link rel="apple-touch-icon" href="./assets/icon/app_icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.8;
+            color: #1f2937;
+            background: #f9fafb;
+            min-height: 100vh;
+        }
+        
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            padding: 15px 0;
+        }
+        
+        .back-button {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #059669;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .back-button:hover {
+            color: #047857;
+            gap: 15px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 100px 30px 60px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(5, 150, 105, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: white;
+            padding: 5px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .summary-box {
+            background: linear-gradient(to right, #ecfdf5, #d1fae5);
+            border-left: 5px solid #059669;
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 40px;
+        }
+        
+        .summary-box h2 {
+            color: #059669;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .summary-box p {
+            font-size: 1.15em;
+            line-height: 1.8;
+            color: #047857;
+        }
+        
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+            box-shadow: 0 12px 40px rgba(5, 150, 105, 0.15);
+            transform: translateY(-5px);
+            border-color: #059669;
+        }
+        
+        h2 {
+            color: #059669;
+            font-size: 1.7em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+        }
+        
+        h3 {
+            color: #047857;
+            font-size: 1.3em;
+            margin: 25px 0 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        p {
+            margin-bottom: 18px;
+            color: #4b5563;
+            font-size: 1.05em;
+        }
+        
+        ul {
+            margin: 20px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        li {
+            padding: 12px 0 12px 40px;
+            position: relative;
+            color: #374151;
+            font-size: 1.05em;
+            line-height: 1.7;
+        }
+        
+        li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        strong {
+            color: #059669;
+            font-weight: 600;
+        }
+        
+        .highlight-text {
+            background: linear-gradient(120deg, #d1fae5 0%, #a7f3d0 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .cta-box {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            margin: 50px 0 40px;
+            box-shadow: 0 20px 60px rgba(5, 150, 105, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-box::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite reverse;
+        }
+        
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-box h2 {
+            color: white;
+            margin-bottom: 15px;
+            justify-content: center;
+            font-size: 2em;
+        }
+        
+        .cta-box p {
+            color: white;
+            margin-bottom: 25px;
+            font-size: 1.2em;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #059669;
+            padding: 18px 50px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15em;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+            font-size: 0.95em;
+        }
+        
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            margin: 30px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 80px 20px 40px;
+            }
+            
+            .header {
+                padding: 40px 25px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 25px;
+            }
+            
+            h2 {
+                font-size: 1.4em;
+            }
+            
+            .back-button {
+                padding: 0 20px;
+            }
+            
+            .cta-box {
+                padding: 35px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="index.html" class="back-button">
+            <span>← Kembali ke Beranda</span>
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <img src="./assets/icon/app_icon.png" alt="Saku Muslim">
+                <h1>Kebijakan Privasi</h1>
+                <p>Terakhir diperbarui: 26 Desember 2025</p>
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <h2>🔐 Privasi Anda, Prioritas Kami</h2>
+            <p>
+                Saku Muslim adalah aplikasi <span class="highlight-text">100% offline</span> yang tidak mengumpulkan, 
+                menyimpan, atau membagikan data pribadi Anda ke server kami atau pihak ketiga. 
+                <strong>Semua data disimpan secara lokal di perangkat Anda.</strong>
+            </p>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">1</span>Data yang Kami Kumpulkan</h2>
+            
+            <h3>📍 Data Lokasi</h3>
+            <p>Aplikasi meminta akses lokasi perangkat Anda untuk:</p>
+            <ul>
+                <li>Menentukan waktu sholat yang akurat sesuai koordinat geografis Anda</li>
+                <li>Menampilkan arah kiblat pada fitur kompas digital</li>
+            </ul>
+            <p><strong>Penting:</strong> Data lokasi <span class="highlight-text">hanya disimpan di perangkat Anda</span> dan tidak pernah dikirim ke server manapun.</p>
+
+            <div class="divider"></div>
+
+            <h3>⚙️ Data Preferensi & Pengaturan Lokal</h3>
+            <p>Aplikasi menyimpan pengaturan dan preferensi Anda secara lokal, termasuk:</p>
+            <ul>
+                <li>Pengaturan notifikasi adzan (waktu dan pilihan suara)</li>
+                <li>Bookmark surah dan ayat Al-Qur'an favorit Anda</li>
+                <li>Riwayat bacaan doa dan dzikir</li>
+                <li>Preferensi tampilan aplikasi</li>
+            </ul>
+            <p><strong>Teknologi:</strong> Menggunakan SharedPreferences dan SQLite database lokal yang <span class="highlight-text">tersimpan hanya di perangkat Anda</span>.</p>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">2</span>Bagaimana Kami Menggunakan Data</h2>
+            <p>Data yang dikumpulkan hanya digunakan untuk meningkatkan pengalaman ibadah Anda:</p>
+            <ul>
+                <li>Menampilkan waktu sholat yang akurat berdasarkan lokasi geografis Anda</li>
+                <li>Mengirim notifikasi pengingat adzan sesuai pengaturan yang Anda pilih</li>
+                <li>Menampilkan arah kiblat dengan akurat menggunakan sensor kompas</li>
+                <li>Menyimpan bookmark dan riwayat bacaan untuk kemudahan akses</li>
+            </ul>
+            <p><strong>Jaminan Kami:</strong> Kami <span class="highlight-text">tidak pernah menganalisis, membagikan, atau menjual</span> data Anda kepada pihak manapun.</p>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">3</span>Penyimpanan & Keamanan Data</h2>
+            <p>Komitmen kami terhadap privasi Anda:</p>
+            <ul>
+                <li><strong>Tidak ada server backend</strong> - Kami tidak memiliki server yang menyimpan data pengguna</li>
+                <li><strong>Tidak ada sinkronisasi cloud</strong> - Data tidak di-backup atau di-upload ke cloud manapun</li>
+                <li><strong>Data tetap di perangkat Anda</strong> - Hanya Anda yang memiliki akses penuh ke data Anda</li>
+                <li><strong>Penghapusan otomatis</strong> - Jika Anda menghapus aplikasi, semua data akan terhapus dari perangkat</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">4</span>Izin yang Diperlukan</h2>
+            <p>Untuk memberikan layanan terbaik, aplikasi memerlukan izin berikut:</p>
+            <ul>
+                <li><strong>📍 Akses Lokasi</strong> - Menentukan waktu sholat akurat dan arah kiblat</li>
+                <li><strong>🔔 Notifikasi</strong> - Mengirim pengingat waktu sholat dan adzan</li>
+                <li><strong>🌐 Internet</strong> - Mengunduh data Al-Qur'an dan audio murattal (hanya sekali saat pertama)</li>
+                <li><strong>🧭 Sensor Kompas</strong> - Menampilkan arah kiblat dengan akurat</li>
+            </ul>
+            <p><em>Semua izin dapat dikelola melalui pengaturan perangkat Anda kapan saja.</em></p>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">5</span>Layanan Pihak Ketiga</h2>
+            <p>Aplikasi menggunakan API eksternal berikut untuk menyediakan konten:</p>
+            <ul>
+                <li><strong>equran.id</strong> - Menyediakan teks Al-Qur'an lengkap dengan terjemahan Bahasa Indonesia</li>
+                <li><strong>api.myquran.com</strong> - Menyediakan data jadwal waktu sholat berdasarkan lokasi</li>
+            </ul>
+            <p><strong>Catatan Penting:</strong> API ini <span class="highlight-text">hanya digunakan untuk mengunduh konten</span> dan tidak mengumpulkan atau menyimpan data pribadi Anda.</p>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">6</span>Hak & Kontrol Anda</h2>
+            <p>Anda memiliki kontrol penuh atas data Anda:</p>
+            <ul>
+                <li><strong>Hapus semua data</strong> - Cukup hapus aplikasi untuk menghapus seluruh data lokal</li>
+                <li><strong>Kontrol izin</strong> - Nonaktifkan izin lokasi atau notifikasi kapan saja melalui pengaturan</li>
+                <li><strong>Mode offline penuh</strong> - Gunakan aplikasi sepenuhnya offline setelah data Al-Qur'an terunduh</li>
+                <li><strong>Transparansi</strong> - Tidak ada data tersembunyi atau tracking yang berjalan di background</li>
+            </ul>
+        </div>
+
+        <div class="cta-box">
+            <div class="cta-content">
+                <h2>🌙 Siap Mulai Beribadah?</h2>
+                <p>
+                    Download Saku Muslim sekarang dan rasakan kemudahan beribadah di era digital dengan jaminan privasi terjaga
+                </p>
+                <a href="index.html" class="cta-button">Kembali ke Beranda</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="section-number">7</span>Hubungi Kami</h2>
+            <p>
+                Punya pertanyaan tentang kebijakan privasi kami? Kami siap membantu:<br><br>
+                <strong>📧 Email:</strong> <a href="mailto:akunviprio@gmail.com" style="color: #059669; text-decoration: none; font-weight: 600;">akunviprio@gmail.com</a>
+            </p>
+            <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 0.95em;">
+                Kami berkomitmen untuk merespons setiap pertanyaan Anda dalam waktu 1-2 hari kerja.
+            </p>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p style="font-weight: 600; color: #059669; margin-bottom: 8px;">
+            🔒 Tidak ada tracking • Tidak ada analytics • Tidak ada iklan
+        </p>
+        <p>&copy; 2025 Saku Muslim. Dibuat dengan ❤️ untuk umat Muslim Indonesia.</p>
+    </div>
+</body>
+</html>
