@@ -8,6 +8,9 @@ import 'pages/splash_screen.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/notification_test_page.dart';
 import 'services/notification_service.dart';
+import 'services/iap_service.dart';
+import 'services/premium_service.dart';
+import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,20 +21,52 @@ void main() async {
   // Initialize notification service
   await NotificationService().initialize();
   
+  // Initialize premium service
+  await PremiumService().initialize();
+  
+  // Initialize IAP service (for in-app purchases)
+  await IAPService().initialize();
+  
+  // Initialize theme service
+  await ThemeService().init();
+  
   runApp(const SakuMuslimApp());
 }
 
-class SakuMuslimApp extends StatelessWidget {
+class SakuMuslimApp extends StatefulWidget {
   const SakuMuslimApp({super.key});
+
+  @override
+  State<SakuMuslimApp> createState() => _SakuMuslimAppState();
+}
+
+class _SakuMuslimAppState extends State<SakuMuslimApp> {
+  final ThemeService _themeService = ThemeService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to theme changes
+    _themeService.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _themeService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Saku Muslim',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+      theme: _themeService.getLightTheme(),
+      darkTheme: _themeService.getDarkTheme(),
+      themeMode: _themeService.themeMode,
       home: const SplashScreen(),
       routes: {
         '/home': (context) => const MainPage(),

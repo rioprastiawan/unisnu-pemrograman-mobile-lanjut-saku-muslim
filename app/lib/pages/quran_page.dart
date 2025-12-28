@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/surah.dart';
 import '../services/quran_api_service.dart';
 import '../services/database_helper.dart';
@@ -15,7 +17,7 @@ class QuranPage extends StatefulWidget {
 class _QuranPageState extends State<QuranPage> {
   final QuranApiService _quranApiService = QuranApiService();
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  
+
   List<Surah> _surahs = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -44,6 +46,237 @@ class _QuranPageState extends State<QuranPage> {
     });
   }
 
+  void _showSurahContextMenu(BuildContext context, Surah surah) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                surah.namaLatin,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            // Menu items
+            ListTile(
+              leading: const Icon(Icons.bookmark_add),
+              title: const Text('Tandai sebagai Terakhir Dibaca'),
+              subtitle: const Text('Simpan posisi baca Anda'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _dbHelper.saveLastReadQuran(
+                  surahNumber: surah.nomor,
+                  surahName: surah.namaLatin,
+                  ayatNumber: 1,
+                );
+                await _loadLastRead();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.bookmark, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text('Ditandai: ${surah.namaLatin}')),
+                        ],
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Info Surah'),
+              subtitle: const Text('Lihat detail surah'),
+              onTap: () {
+                Navigator.pop(context);
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Row(
+                      children: [
+                        Text(surah.namaLatin),
+                        const Spacer(),
+                        Text(
+                          surah.nama,
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          surah.arti,
+                          style: const TextStyle(
+                            fontStyle: FontStyle.italic,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow('Nomor', surah.nomor.toString()),
+                        _buildInfoRow('Tempat Turun', surah.tempatTurun),
+                        _buildInfoRow(
+                          'Jumlah Ayat',
+                          '${surah.jumlahAyat} ayat',
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Tutup'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SurahDetailPage(
+                                nomorSurah: surah.nomor,
+                                namaSurah: surah.namaLatin,
+                              ),
+                            ),
+                          ).then((_) {
+                            _loadLastRead();
+                            _loadFavoriteCount();
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                        ),
+                        child: const Text('Buka Surah'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Salin Info Surah'),
+              subtitle: const Text('Salin nama dan detail surah'),
+              onTap: () {
+                Navigator.pop(context);
+                final surahInfo =
+                    '''📖 ${surah.namaLatin} (${surah.nama})
+${surah.arti}
+
+Nomor: ${surah.nomor}
+Tempat Turun: ${surah.tempatTurun}
+Jumlah Ayat: ${surah.jumlahAyat}
+
+━━━━━━━━━━━━━━━━━━
+🕌 Saku Muslim''';
+                Clipboard.setData(ClipboardData(text: surahInfo));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Info surah disalin'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Bagikan Surah'),
+              subtitle: const Text('Bagikan info surah ke teman'),
+              onTap: () {
+                Navigator.pop(context);
+                final shareText =
+                    '''📖 ${surah.namaLatin} (${surah.nama})
+"${surah.arti}"
+
+Nomor: ${surah.nomor}
+Tempat Turun: ${surah.tempatTurun}
+Jumlah Ayat: ${surah.jumlahAyat}
+
+Baca lengkap di Saku Muslim
+━━━━━━━━━━━━━━━━━━
+🕌 Aplikasi Muslim Lengkap''';
+                Share.share(shareText);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.book, color: Colors.green.shade700),
+              title: const Text('Buka Surah'),
+              subtitle: const Text('Baca surah lengkap'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SurahDetailPage(
+                      nomorSurah: surah.nomor,
+                      namaSurah: surah.namaLatin,
+                    ),
+                  ),
+                ).then((_) {
+                  _loadLastRead();
+                  _loadFavoriteCount();
+                });
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          const Text(': '),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loadSurahs() async {
     setState(() {
       _isLoading = true;
@@ -53,14 +286,14 @@ class _QuranPageState extends State<QuranPage> {
     try {
       // Try to load from cache first
       final cachedSurahs = await _dbHelper.getAllSurahsCache();
-      
+
       if (cachedSurahs.isNotEmpty) {
         // Load from cache
         setState(() {
           _surahs = cachedSurahs.map((map) => Surah.fromMap(map)).toList();
           _isLoading = false;
         });
-        
+
         // Check if cache is stale and refresh in background
         final isStale = await _dbHelper.isSurahCacheStale(maxAgeDays: 30);
         if (isStale) {
@@ -81,12 +314,10 @@ class _QuranPageState extends State<QuranPage> {
   Future<void> _fetchAndCacheSurahs() async {
     try {
       final surahs = await _quranApiService.fetchAllSurahs();
-      
+
       // Save to cache
-      await _dbHelper.saveSurahsCache(
-        surahs.map((s) => s.toMap()).toList()
-      );
-      
+      await _dbHelper.saveSurahsCache(surahs.map((s) => s.toMap()).toList());
+
       setState(() {
         _surahs = surahs;
         _isLoading = false;
@@ -102,10 +333,8 @@ class _QuranPageState extends State<QuranPage> {
   Future<void> _refreshSurahsInBackground() async {
     try {
       final surahs = await _quranApiService.fetchAllSurahs();
-      await _dbHelper.saveSurahsCache(
-        surahs.map((s) => s.toMap()).toList()
-      );
-      
+      await _dbHelper.saveSurahsCache(surahs.map((s) => s.toMap()).toList());
+
       if (mounted) {
         setState(() {
           _surahs = surahs;
@@ -202,9 +431,7 @@ class _QuranPageState extends State<QuranPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -212,11 +439,7 @@ class _QuranPageState extends State<QuranPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
@@ -249,9 +472,7 @@ class _QuranPageState extends State<QuranPage> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
@@ -269,6 +490,7 @@ class _QuranPageState extends State<QuranPage> {
             _loadFavoriteCount();
           });
         },
+        onLongPress: () => _showSurahContextMenu(context, surah),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -298,7 +520,7 @@ class _QuranPageState extends State<QuranPage> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Info surah
               Expanded(
                 child: Column(
@@ -320,32 +542,58 @@ class _QuranPageState extends State<QuranPage> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: surah.tempatTurun.toLowerCase() == 'mekah' 
-                            ? Colors.amber.shade100 
-                            : Colors.blue.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        surah.tempatTurun,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: surah.tempatTurun.toLowerCase() == 'mekah'
-                              ? Colors.amber.shade900
-                              : Colors.blue.shade900,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: surah.tempatTurun.toLowerCase() == 'mekah'
+                                ? Colors.amber.shade100
+                                : Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            surah.tempatTurun,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: surah.tempatTurun.toLowerCase() == 'mekah'
+                                  ? Colors.amber.shade900
+                                  : Colors.blue.shade900,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (surah.nomor == 1)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.touch_app,
+                                  size: 10,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'Tahan lama',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              
+
               // Nama Arab
               Text(
                 surah.nama,

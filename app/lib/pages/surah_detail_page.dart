@@ -7,6 +7,9 @@ import '../models/ayat.dart';
 import '../services/quran_api_service.dart';
 import '../services/database_helper.dart';
 import '../services/quran_audio_service.dart';
+import '../services/offline_audio_service.dart';
+import '../services/premium_service.dart';
+import 'premium_page.dart';
 
 class SurahDetailPage extends StatefulWidget {
   final int nomorSurah;
@@ -28,6 +31,8 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
   final QuranApiService _quranApiService = QuranApiService();
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final QuranAudioService _audioService = QuranAudioService();
+  final OfflineAudioService _offlineAudioService = OfflineAudioService();
+  final PremiumService _premiumService = PremiumService();
   final ScrollController _scrollController = ScrollController();
   final Map<int, GlobalKey> _ayatKeys = {};
 
@@ -38,14 +43,19 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
   PlayerState _playerState = PlayerState.stopped;
   Set<int> _favoritedAyat = {}; // Track favorited ayat numbers
   int? _highlightedAyat; // Track which ayat to highlight
+  bool _isDownloaded = false;
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  bool _isPremium = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _loadSurahDetail();
     _loadFavoriteStatus();
-    
+    _checkPremiumAndDownloadStatus();
+
     // Listen to player state changes
     _audioService.playerStateStream.listen((state) {
       if (mounted) {
@@ -54,7 +64,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         });
       }
     });
-    
+
     // Listen to audio completion
     _audioService.audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) {
@@ -64,7 +74,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
       }
     });
   }
-  
+
   @override
   void dispose() {
     _audioService.dispose();
@@ -74,15 +84,17 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
 
   void _scrollToAyat(int ayatNumber) {
     if (_surahDetail == null || !mounted) return;
-    
+
     // Highlight the ayat immediately
     setState(() {
       _highlightedAyat = ayatNumber;
     });
-    
+
     // Find the index of the target ayat
-    final targetIndex = _surahDetail!.ayat.indexWhere((a) => a.nomorAyat == ayatNumber);
-    
+    final targetIndex = _surahDetail!.ayat.indexWhere(
+      (a) => a.nomorAyat == ayatNumber,
+    );
+
     if (targetIndex == -1) {
       // Ayat not found, just remove highlight
       setState(() {
@@ -90,23 +102,23 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
       });
       return;
     }
-    
+
     // Calculate estimated position
     // Header (~350px) + description (~150px on average) + ayat cards (~300px each)
     final estimatedOffset = 500.0 + (targetIndex * 300.0);
-    
+
     // Check if we need to jump first (for far items)
     final maxScroll = _scrollController.position.maxScrollExtent;
     final targetOffset = estimatedOffset.clamp(0.0, maxScroll);
     final currentOffset = _scrollController.offset;
     final distance = (targetOffset - currentOffset).abs();
-    
+
     // If very far (>8000px), jump to nearby first to trigger rendering
     if (distance > 8000 && targetIndex > 10) {
       // Jump to 70% of target without animation
       final jumpTo = (targetOffset * 0.7).clamp(0.0, maxScroll);
       _scrollController.jumpTo(jumpTo);
-      
+
       // Wait for rendering, then try with GlobalKey
       Future.delayed(const Duration(milliseconds: 400), () {
         _tryScrollWithKey(ayatNumber, targetOffset);
@@ -118,12 +130,12 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
       });
     }
   }
-  
+
   void _tryScrollWithKey(int ayatNumber, double fallbackOffset) {
     if (!mounted) return;
-    
+
     final key = _ayatKeys[ayatNumber];
-    
+
     // Try to use GlobalKey if available
     if (key?.currentContext != null) {
       try {
@@ -133,7 +145,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
           curve: Curves.easeInOutCubic,
           alignment: 0.15,
         );
-        
+
         // Remove highlight after animation
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
@@ -147,7 +159,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         // Fall through to manual scroll
       }
     }
-    
+
     // Fallback: Manual scroll if key not available
     try {
       _scrollController.animateTo(
@@ -155,11 +167,11 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutCubic,
       );
-      
+
       // Wait and retry with key after scroll
       Future.delayed(const Duration(milliseconds: 700), () {
         if (!mounted) return;
-        
+
         final key = _ayatKeys[ayatNumber];
         if (key?.currentContext != null) {
           try {
@@ -174,7 +186,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
             // Ignore
           }
         }
-        
+
         // Remove highlight
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) {
@@ -196,7 +208,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
 
   void _createAyatKeys() {
     if (_surahDetail == null) return;
-    
+
     _ayatKeys.clear();
     for (final ayat in _surahDetail!.ayat) {
       _ayatKeys[ayat.nomorAyat] = GlobalKey();
@@ -205,7 +217,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
 
   Future<void> _loadFavoriteStatus() async {
     if (_surahDetail == null) return;
-    
+
     final favorites = <int>{};
     for (final ayat in _surahDetail!.ayat) {
       final isFavorited = await _dbHelper.isAyatFavorited(
@@ -216,7 +228,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         favorites.add(ayat.nomorAyat);
       }
     }
-    
+
     if (mounted) {
       setState(() {
         _favoritedAyat = favorites;
@@ -224,9 +236,290 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
     }
   }
 
+  Future<void> _checkPremiumAndDownloadStatus() async {
+    _isPremium = await _premiumService.isPremium();
+    _isDownloaded = await _dbHelper.isSurahAudioDownloaded(widget.nomorSurah);
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _handleDownloadAudio() async {
+    if (!_isPremium) {
+      // Show premium prompt
+      final shouldUpgrade = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.lock, color: Colors.amber),
+              SizedBox(width: 8),
+              Text('Fitur Premium'),
+            ],
+          ),
+          content: const Text(
+            'Download audio offline hanya tersedia untuk pengguna premium. '
+            'Upgrade sekarang untuk menikmati fitur ini!',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+              child: const Text('Upgrade Premium'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldUpgrade == true && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PremiumPage()),
+        );
+      }
+      return;
+    }
+
+    if (_isDownloaded) {
+      // Already downloaded, ask if want to delete
+      final shouldDelete = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Hapus Audio Offline'),
+          content: const Text(
+            'Audio sudah didownload. Hapus dari penyimpanan?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Hapus'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldDelete == true) {
+        await _offlineAudioService.deleteAudio(widget.nomorSurah);
+        await _checkPremiumAndDownloadStatus();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Audio berhasil dihapus')),
+          );
+        }
+      }
+      return;
+    }
+
+    // Start download
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+    });
+
+    try {
+      final audioUrl = _surahDetail!.audioFull['05']; // Using reciter 05
+      if (audioUrl == null) {
+        throw Exception('URL audio tidak tersedia');
+      }
+
+      final success = await _offlineAudioService.downloadAudio(
+        surahNumber: widget.nomorSurah,
+        audioUrl: audioUrl,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _downloadProgress = progress;
+            });
+          }
+        },
+      );
+
+      if (success) {
+        await _checkPremiumAndDownloadStatus();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Audio berhasil didownload!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal download: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+          _downloadProgress = 0.0;
+        });
+      }
+    }
+  }
+
+  void _showSurahContextMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                _surahDetail!.namaLatin,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            // Menu items
+            if (_isPremium || PremiumService.debugPremiumMode)
+              ListTile(
+                leading: Icon(
+                  _isDownloaded ? Icons.delete : Icons.download,
+                  color: _isDownloaded ? Colors.red : Colors.blue,
+                ),
+                title: Text(
+                  _isDownloaded
+                      ? 'Hapus Audio Offline'
+                      : 'Download Audio Offline',
+                ),
+                subtitle: _isDownloaded
+                    ? const Text('Audio sudah didownload')
+                    : const Text('Download untuk akses offline'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleDownloadAudio();
+                },
+              ),
+            if (!_isPremium && !PremiumService.debugPremiumMode)
+              ListTile(
+                leading: const Icon(Icons.lock, color: Colors.amber),
+                title: const Text('Download Audio Offline'),
+                subtitle: const Text('Fitur Premium'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleDownloadAudio();
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.bookmark_add),
+              title: const Text('Tandai sebagai Terakhir Dibaca'),
+              subtitle: const Text('Simpan posisi baca Anda'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _dbHelper.saveLastReadQuran(
+                  surahNumber: widget.nomorSurah,
+                  surahName: widget.namaSurah,
+                  ayatNumber: 1,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.bookmark, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text('Ditandai: ${widget.namaSurah}'),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Salin Info Surah'),
+              subtitle: const Text('Salin nama dan detail surah'),
+              onTap: () {
+                Navigator.pop(context);
+                final surahInfo =
+                    '''📖 ${_surahDetail!.namaLatin} (${_surahDetail!.nama})
+${_surahDetail!.arti}
+
+Tempat Turun: ${_surahDetail!.tempatTurun}
+Jumlah Ayat: ${_surahDetail!.jumlahAyat}
+
+━━━━━━━━━━━━━━━━━━
+🕌 Saku Muslim''';
+                Clipboard.setData(ClipboardData(text: surahInfo));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Info surah disalin'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Bagikan Surah'),
+              subtitle: const Text('Bagikan info surah ke teman'),
+              onTap: () {
+                Navigator.pop(context);
+                final shareText =
+                    '''📖 ${_surahDetail!.namaLatin} (${_surahDetail!.nama})
+"${_surahDetail!.arti}"
+
+Tempat Turun: ${_surahDetail!.tempatTurun}
+Jumlah Ayat: ${_surahDetail!.jumlahAyat}
+
+Baca lengkap di Saku Muslim
+━━━━━━━━━━━━━━━━━━
+🕌 Aplikasi Muslim Lengkap''';
+                Share.share(shareText);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showAyatContextMenu(BuildContext context, Ayat ayat) {
     final isFavorited = _favoritedAyat.contains(ayat.nomorAyat);
-    
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -338,7 +631,8 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
               title: const Text('Bagikan Ayat'),
               onTap: () {
                 Navigator.pop(context);
-                final shareText = '''📖 QS. ${widget.namaSurah} : ${ayat.nomorAyat}
+                final shareText =
+                    '''📖 QS. ${widget.namaSurah} : ${ayat.nomorAyat}
 
 ${ayat.teksArab}
 
@@ -360,19 +654,19 @@ ${ayat.teksLatin}
 
   Future<void> _toggleFavorite(Ayat ayat) async {
     final isFavorited = _favoritedAyat.contains(ayat.nomorAyat);
-    
+
     if (isFavorited) {
       // Remove from favorites
       final success = await _dbHelper.removeFavoriteAyat(
         widget.nomorSurah,
         ayat.nomorAyat,
       );
-      
+
       if (success && mounted) {
         setState(() {
           _favoritedAyat.remove(ayat.nomorAyat);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -406,12 +700,12 @@ ${ayat.teksLatin}
         ayatTextLatin: ayat.teksLatin,
         ayatTextIndonesia: ayat.teksIndonesia,
       );
-      
+
       if (success && mounted) {
         setState(() {
           _favoritedAyat.add(ayat.nomorAyat);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -446,7 +740,9 @@ ${ayat.teksLatin}
 
     try {
       // Try to load from cache first
-      final cachedDetail = await _dbHelper.getSurahDetailCache(widget.nomorSurah);
+      final cachedDetail = await _dbHelper.getSurahDetailCache(
+        widget.nomorSurah,
+      );
 
       if (cachedDetail != null) {
         // Load from cache
@@ -503,10 +799,7 @@ ${ayat.teksLatin}
       final detail = await _quranApiService.fetchSurahDetail(widget.nomorSurah);
 
       // Save to cache
-      await _dbHelper.saveSurahDetailCache(
-        widget.nomorSurah,
-        detail.toJson(),
-      );
+      await _dbHelper.saveSurahDetailCache(widget.nomorSurah, detail.toJson());
 
       setState(() {
         _surahDetail = detail;
@@ -525,10 +818,7 @@ ${ayat.teksLatin}
   Future<void> _refreshSurahDetailInBackground() async {
     try {
       final detail = await _quranApiService.fetchSurahDetail(widget.nomorSurah);
-      await _dbHelper.saveSurahDetailCache(
-        widget.nomorSurah,
-        detail.toJson(),
-      );
+      await _dbHelper.saveSurahDetailCache(widget.nomorSurah, detail.toJson());
 
       if (mounted) {
         setState(() {
@@ -548,11 +838,14 @@ ${ayat.teksLatin}
         .replaceAll('&nbsp;', ' ')
         .trim();
   }
-  
-  Future<void> _handleAudioButtonPressed(String audioUrl, int ayatNumber) async {
+
+  Future<void> _handleAudioButtonPressed(
+    String audioUrl,
+    int ayatNumber,
+  ) async {
     try {
       final isPlaying = _audioService.isAyatPlaying(ayatNumber);
-      
+
       if (isPlaying && _playerState == PlayerState.playing) {
         // Pause if currently playing
         await _audioService.pause();
@@ -574,11 +867,11 @@ ${ayat.teksLatin}
       }
     }
   }
-  
+
   Future<void> _handleFullSurahButtonPressed(String audioFullUrl) async {
     try {
       final isPlayingFullSurah = _audioService.currentPlayingAyatNumber == -1;
-      
+
       if (isPlayingFullSurah && _playerState == PlayerState.playing) {
         // Pause if currently playing
         await _audioService.pause();
@@ -601,30 +894,38 @@ ${ayat.teksLatin}
     }
   }
 
-  void _navigateToSurah(int nomorSurah, String namaSurah, {bool isNext = true}) {
+  void _navigateToSurah(
+    int nomorSurah,
+    String namaSurah, {
+    bool isNext = true,
+  }) {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => SurahDetailPage(
-          nomorSurah: nomorSurah,
-          namaSurah: namaSurah,
-        ),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            SurahDetailPage(nomorSurah: nomorSurah, namaSurah: namaSurah),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // Slide from right for next, from left for previous
-          final beginOffset = isNext ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0);
-          final endOffset = isNext ? const Offset(-1.0, 0.0) : const Offset(1.0, 0.0);
-          
+          final beginOffset = isNext
+              ? const Offset(1.0, 0.0)
+              : const Offset(-1.0, 0.0);
+          final endOffset = isNext
+              ? const Offset(-1.0, 0.0)
+              : const Offset(1.0, 0.0);
+
           const curve = Curves.easeInOut;
 
           // Incoming page animation
-          var slideTween = Tween(begin: beginOffset, end: Offset.zero).chain(
-            CurveTween(curve: curve),
-          );
+          var slideTween = Tween(
+            begin: beginOffset,
+            end: Offset.zero,
+          ).chain(CurveTween(curve: curve));
 
           // Outgoing page animation
-          var exitTween = Tween(begin: Offset.zero, end: endOffset).chain(
-            CurveTween(curve: curve),
-          );
+          var exitTween = Tween(
+            begin: Offset.zero,
+            end: endOffset,
+          ).chain(CurveTween(curve: curve));
 
           return Stack(
             children: [
@@ -656,9 +957,7 @@ ${ayat.teksLatin}
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -666,11 +965,7 @@ ${ayat.teksLatin}
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
@@ -694,7 +989,8 @@ ${ayat.teksLatin}
     // Use CustomScrollView with SliverAppBar for collapsing header
     return CustomScrollView(
       controller: _scrollController,
-      cacheExtent: 5000, // Pre-render items within 5000 pixels for better scroll accuracy
+      cacheExtent:
+          5000, // Pre-render items within 5000 pixels for better scroll accuracy
       slivers: [
         // Floating header that appears when scrolling down
         SliverAppBar(
@@ -718,111 +1014,204 @@ ${ayat.teksLatin}
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                // Use RepaintBoundary to prevent unnecessary repaints
-                return RepaintBoundary(
-                  child: _buildAyatCard(_surahDetail!.ayat[index]),
-                );
-              },
-              childCount: _surahDetail!.ayat.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              // Use RepaintBoundary to prevent unnecessary repaints
+              return RepaintBoundary(
+                child: _buildAyatCard(_surahDetail!.ayat[index]),
+              );
+            }, childCount: _surahDetail!.ayat.length),
           ),
         ),
         // Add bottom padding for navigation bar
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 16),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );
   }
 
   Widget _buildHeader() {
-    final isPlayingFullSurah = _audioService.currentPlayingAyatNumber == -1; // Use -1 to indicate full surah
-    final audioFullUrl = _surahDetail!.audioFull['05']; // Using reciter 05 (Mishari Rashid)
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade700, Colors.green.shade500],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final isPlayingFullSurah =
+        _audioService.currentPlayingAyatNumber ==
+        -1; // Use -1 to indicate full surah
+    final audioFullUrl =
+        _surahDetail!.audioFull['05']; // Using reciter 05 (Mishari Rashid)
+
+    return InkWell(
+      onLongPress: () => _showSurahContextMenu(context),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade700, Colors.green.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            _surahDetail!.nama,
-            style: const TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            textDirection: TextDirection.rtl,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _surahDetail!.namaLatin,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _surahDetail!.arti,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildInfoChip(
-                _surahDetail!.tempatTurun,
-                _surahDetail!.tempatTurun.toLowerCase() == 'mekah'
-                    ? Colors.amber
-                    : Colors.blue,
+        child: Column(
+          children: [
+            Text(
+              _surahDetail!.nama,
+              style: const TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              const SizedBox(width: 8),
-              _buildInfoChip(
-                '${_surahDetail!.jumlahAyat} Ayat',
-                Colors.white,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Play Full Surah Button
-          ElevatedButton.icon(
-            onPressed: audioFullUrl != null
-                ? () => _handleFullSurahButtonPressed(audioFullUrl)
-                : null,
-            icon: Icon(
-              isPlayingFullSurah && _playerState == PlayerState.playing
-                  ? Icons.pause
-                  : Icons.play_arrow,
+              textDirection: TextDirection.rtl,
             ),
-            label: Text(
-              isPlayingFullSurah && _playerState == PlayerState.playing
-                  ? 'Jeda Surah Lengkap'
-                  : 'Putar Surah Lengkap',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.green.shade700,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+            const SizedBox(height: 8),
+            Text(
+              _surahDetail!.namaLatin,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              _surahDetail!.arti,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.9),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildInfoChip(
+                  _surahDetail!.tempatTurun,
+                  _surahDetail!.tempatTurun.toLowerCase() == 'mekah'
+                      ? Colors.amber
+                      : Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                _buildInfoChip(
+                  '${_surahDetail!.jumlahAyat} Ayat',
+                  Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Play Full Surah Button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: audioFullUrl != null
+                      ? () => _handleFullSurahButtonPressed(audioFullUrl)
+                      : null,
+                  icon: Icon(
+                    isPlayingFullSurah && _playerState == PlayerState.playing
+                        ? Icons.pause
+                        : Icons.play_arrow,
+                  ),
+                  label: Text(
+                    isPlayingFullSurah && _playerState == PlayerState.playing
+                        ? 'Jeda'
+                        : 'Putar',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.green.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Download button
+                ElevatedButton.icon(
+                  onPressed: _isDownloading ? null : _handleDownloadAudio,
+                  icon: _isDownloading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            value: _downloadProgress,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _isDownloaded ? Icons.download_done : Icons.download,
+                          color: _isPremium
+                              ? Colors.green.shade700
+                              : Colors.grey,
+                        ),
+                  label: Text(
+                    _isDownloading
+                        ? '${(_downloadProgress * 100).toInt()}%'
+                        : _isDownloaded
+                        ? 'Offline'
+                        : 'Download',
+                    style: TextStyle(
+                      color: _isDownloading
+                          ? Colors.white
+                          : (_isPremium ? Colors.green.shade700 : Colors.grey),
+                      fontWeight: _isDownloading
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isDownloading
+                        ? Colors.green.shade700
+                        : Colors.white,
+                    foregroundColor: _isDownloading
+                        ? Colors.white
+                        : Colors.green.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (!_isPremium)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '🔒 Download offline - Fitur Premium',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            // Long press hint
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.touch_app,
+                    size: 12,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Tahan lama untuk opsi lainnya',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -831,7 +1220,7 @@ ${ayat.teksLatin}
     // Determine background and text colors based on the color parameter
     Color backgroundColor;
     Color textColor;
-    
+
     if (color == Colors.white) {
       // For "X Ayat" chip - white background with green text
       backgroundColor = Colors.white.withOpacity(0.9);
@@ -845,7 +1234,7 @@ ${ayat.teksLatin}
       backgroundColor = Colors.blue.shade100;
       textColor = Colors.blue.shade900;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -915,7 +1304,9 @@ ${ayat.teksLatin}
               child: Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  _isDescriptionExpanded ? 'Lihat Lebih Sedikit' : 'Lihat Selengkapnya',
+                  _isDescriptionExpanded
+                      ? 'Lihat Lebih Sedikit'
+                      : 'Lihat Selengkapnya',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -934,10 +1325,10 @@ ${ayat.teksLatin}
     final audioUrl = ayat.audio['05']; // Using reciter 05 (Mishari Rashid)
     final isFavorited = _favoritedAyat.contains(ayat.nomorAyat);
     final isHighlighted = _highlightedAyat == ayat.nomorAyat;
-    
+
     // Get the pre-created key
     final ayatKey = _ayatKeys[ayat.nomorAyat];
-    
+
     return Dismissible(
       key: Key('ayat_${widget.nomorSurah}_${ayat.nomorAyat}'),
       direction: DismissDirection.startToEnd,
@@ -948,7 +1339,7 @@ ${ayat.teksLatin}
           surahName: widget.namaSurah,
           ayatNumber: ayat.nomorAyat,
         );
-        
+
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -974,7 +1365,7 @@ ${ayat.teksLatin}
             ),
           );
         }
-        
+
         // Return false to prevent dismissal (keep the card visible)
         return false;
       },
@@ -1013,164 +1404,173 @@ ${ayat.teksLatin}
           key: ayatKey,
           margin: const EdgeInsets.only(bottom: 16),
           elevation: isHighlighted ? 8 : 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: isHighlighted
-              ? BorderSide(color: Colors.green.shade700, width: 3)
-              : BorderSide.none,
-        ),
-        color: isHighlighted ? Colors.green.shade50 : null,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header with number and audio icon
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade700, Colors.green.shade500],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: isHighlighted
+                ? BorderSide(color: Colors.green.shade700, width: 3)
+                : BorderSide.none,
+          ),
+          color: isHighlighted ? Colors.green.shade50 : null,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header with number and audio icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.shade700,
+                            Colors.green.shade500,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        ayat.nomorAyat.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                      child: Center(
+                        child: Text(
+                          ayat.nomorAyat.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      // Long-press hint on first ayat
-                      if (ayat.nomorAyat == 1)
-                        Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.green.shade200,
+                    Row(
+                      children: [
+                        // Long-press hint on first ayat
+                        if (ayat.nomorAyat == 1)
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.touch_app,
+                                  size: 14,
+                                  color: Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Tahan lama untuk opsi',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.green.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.touch_app,
-                                size: 14,
-                                color: Colors.green.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Tahan lama untuk opsi',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                        // Favorite button
+                        IconButton(
+                          icon: Icon(
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: isFavorited
+                                ? Colors.pink.shade400
+                                : Colors.grey.shade400,
                           ),
+                          onPressed: () => _toggleFavorite(ayat),
+                          tooltip: isFavorited
+                              ? 'Hapus dari favorit'
+                              : 'Tambah ke favorit',
                         ),
-                      // Favorite button
-                      IconButton(
-                        icon: Icon(
-                          isFavorited ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorited 
-                              ? Colors.pink.shade400 
-                              : Colors.grey.shade400,
+                        // Audio button
+                        IconButton(
+                          icon: Icon(
+                            isPlaying && _playerState == PlayerState.playing
+                                ? Icons.pause_circle
+                                : Icons.play_circle,
+                            color: isPlaying
+                                ? Colors.green.shade700
+                                : Colors.grey.shade600,
+                          ),
+                          onPressed: audioUrl != null
+                              ? () => _handleAudioButtonPressed(
+                                  audioUrl,
+                                  ayat.nomorAyat,
+                                )
+                              : null,
+                          tooltip: audioUrl != null
+                              ? (isPlaying &&
+                                        _playerState == PlayerState.playing
+                                    ? 'Pause'
+                                    : 'Play')
+                              : 'Audio not available',
                         ),
-                        onPressed: () => _toggleFavorite(ayat),
-                        tooltip: isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit',
-                      ),
-                      // Audio button
-                      IconButton(
-                        icon: Icon(
-                          isPlaying && _playerState == PlayerState.playing
-                              ? Icons.pause_circle
-                              : Icons.play_circle,
-                          color: isPlaying 
-                              ? Colors.green.shade700 
-                              : Colors.grey.shade600,
-                        ),
-                        onPressed: audioUrl != null 
-                            ? () => _handleAudioButtonPressed(audioUrl, ayat.nomorAyat)
-                            : null,
-                        tooltip: audioUrl != null 
-                            ? (isPlaying && _playerState == PlayerState.playing 
-                                ? 'Pause' 
-                                : 'Play')
-                            : 'Audio not available',
-                      ),
-                    ],
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Arabic text
+                Text(
+                  ayat.teksArab,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    height: 2,
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Arabic text
-              Text(
-                ayat.teksArab,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  height: 2,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
                 ),
-                textAlign: TextAlign.right,
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 16),
-              
-              // Latin transliteration
-              Text(
-                ayat.teksLatin,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.grey.shade700,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              // Indonesian translation
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Text(
-                  ayat.teksIndonesia,
+                const SizedBox(height: 16),
+
+                // Latin transliteration
+                Text(
+                  ayat.teksLatin,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade800,
-                    height: 1.6,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey.shade700,
+                    height: 1.5,
                   ),
-                  textAlign: TextAlign.justify,
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+
+                // Indonesian translation
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Text(
+                    ayat.teksIndonesia,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade800,
+                      height: 1.6,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -1178,7 +1578,8 @@ ${ayat.teksLatin}
   Widget? _buildNavigationBar() {
     if (_surahDetail == null) return null;
 
-    final hasPrev = _surahDetail!.suratSebelumnya != null &&
+    final hasPrev =
+        _surahDetail!.suratSebelumnya != null &&
         _surahDetail!.suratSebelumnya is Map;
     final hasNext = _surahDetail!.suratSelanjutnya != null;
 
@@ -1222,7 +1623,8 @@ ${ayat.teksLatin}
                           style: TextStyle(fontSize: 10),
                         ),
                         Text(
-                          (_surahDetail!.suratSebelumnya as Map)['namaLatin'] as String,
+                          (_surahDetail!.suratSebelumnya as Map)['namaLatin']
+                              as String,
                           style: const TextStyle(fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1261,7 +1663,8 @@ ${ayat.teksLatin}
                           style: TextStyle(fontSize: 10),
                         ),
                         Text(
-                          _surahDetail!.suratSelanjutnya!['namaLatin'] as String,
+                          _surahDetail!.suratSelanjutnya!['namaLatin']
+                              as String,
                           style: const TextStyle(fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),

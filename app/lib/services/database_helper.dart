@@ -22,7 +22,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'saku_muslim.db');
     return await openDatabase(
       path,
-      version: 6,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -123,6 +123,29 @@ class DatabaseHelper {
         UNIQUE(surah_number, ayat_number)
       )
     ''');
+
+    // Table for offline audio (Premium feature)
+    await db.execute('''
+      CREATE TABLE offline_audio (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        surah_number INTEGER NOT NULL UNIQUE,
+        file_path TEXT NOT NULL,
+        file_size INTEGER NOT NULL,
+        downloaded_at INTEGER NOT NULL
+      )
+    ''');
+
+    // Table for mosques
+    await db.execute('''
+      CREATE TABLE mosques (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT,
+        city TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -202,10 +225,35 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 7) {
+      // Add offline audio table for version 7 (Premium feature)
+      await db.execute('''
+        CREATE TABLE offline_audio (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          surah_number INTEGER NOT NULL UNIQUE,
+          file_path TEXT NOT NULL,
+          file_size INTEGER NOT NULL,
+          downloaded_at INTEGER NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 8) {
+      // Add mosques table for version 8
+      await db.execute('''
+        CREATE TABLE mosques (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          address TEXT,
+          city TEXT NOT NULL,
+          latitude REAL NOT NULL,
+          longitude REAL NOT NULL
+        )
+      ''');
+    }
   }
 
   // ==================== LOCATION METHODS ====================
-  
+
   Future<Map<String, dynamic>?> getLocationCache() async {
     final db = await database;
     final List<Map<String, dynamic>> results = await db.query(
@@ -226,10 +274,10 @@ class DatabaseHelper {
     required double longitude,
   }) async {
     final db = await database;
-    
+
     // Delete old records
     await db.delete('location_cache');
-    
+
     // Insert new record
     await db.insert('location_cache', {
       'city_id': cityId,
@@ -244,7 +292,9 @@ class DatabaseHelper {
     final cache = await getLocationCache();
     if (cache == null) return true;
 
-    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(cache['last_updated']);
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(
+      cache['last_updated'],
+    );
     final now = DateTime.now();
     final difference = now.difference(lastUpdated);
 
@@ -252,8 +302,11 @@ class DatabaseHelper {
   }
 
   // ==================== PRAYER SCHEDULE METHODS ====================
-  
-  Future<Map<String, dynamic>?> getPrayerScheduleCache(String cityId, String date) async {
+
+  Future<Map<String, dynamic>?> getPrayerScheduleCache(
+    String cityId,
+    String date,
+  ) async {
     final db = await database;
     final List<Map<String, dynamic>> results = await db.query(
       'prayer_schedule_cache',
@@ -279,24 +332,26 @@ class DatabaseHelper {
     required Map<String, dynamic> prayerData,
   }) async {
     final db = await database;
-    
-    await db.insert(
-      'prayer_schedule_cache',
-      {
-        'city_id': cityId,
-        'date': date,
-        'prayer_data': jsonEncode(prayerData),
-        'last_updated': DateTime.now().millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+    await db.insert('prayer_schedule_cache', {
+      'city_id': cityId,
+      'date': date,
+      'prayer_data': jsonEncode(prayerData),
+      'last_updated': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<bool> isPrayerScheduleStale(String cityId, String date, {int maxAgeMinutes = 10}) async {
+  Future<bool> isPrayerScheduleStale(
+    String cityId,
+    String date, {
+    int maxAgeMinutes = 10,
+  }) async {
     final cache = await getPrayerScheduleCache(cityId, date);
     if (cache == null) return true;
 
-    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(cache['last_updated']);
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(
+      cache['last_updated'],
+    );
     final now = DateTime.now();
     final difference = now.difference(lastUpdated);
 
@@ -304,7 +359,7 @@ class DatabaseHelper {
   }
 
   // ==================== SURAH METHODS ====================
-  
+
   Future<List<Map<String, dynamic>>> getAllSurahsCache() async {
     final db = await database;
     final List<Map<String, dynamic>> results = await db.query(
@@ -317,10 +372,10 @@ class DatabaseHelper {
   Future<void> saveSurahsCache(List<Map<String, dynamic>> surahs) async {
     final db = await database;
     final batch = db.batch();
-    
+
     // Delete old cache
     batch.delete('surah_cache');
-    
+
     // Insert all surahs
     for (var surah in surahs) {
       batch.insert('surah_cache', {
@@ -334,14 +389,14 @@ class DatabaseHelper {
         'last_updated': DateTime.now().millisecondsSinceEpoch,
       });
     }
-    
+
     await batch.commit(noResult: true);
   }
 
   Future<bool> isSurahCacheEmpty() async {
     final db = await database;
     final count = Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(*) FROM surah_cache')
+      await db.rawQuery('SELECT COUNT(*) FROM surah_cache'),
     );
     return count == 0;
   }
@@ -355,7 +410,9 @@ class DatabaseHelper {
 
     if (results.isEmpty) return true;
 
-    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(results.first['last_updated']);
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(
+      results.first['last_updated'],
+    );
     final now = DateTime.now();
     final difference = now.difference(lastUpdated);
 
@@ -363,7 +420,7 @@ class DatabaseHelper {
   }
 
   // ==================== SURAH DETAIL METHODS ====================
-  
+
   Future<Map<String, dynamic>?> getSurahDetailCache(int nomorSurah) async {
     final db = await database;
     final List<Map<String, dynamic>> results = await db.query(
@@ -383,25 +440,29 @@ class DatabaseHelper {
     };
   }
 
-  Future<void> saveSurahDetailCache(int nomorSurah, Map<String, dynamic> detailData) async {
+  Future<void> saveSurahDetailCache(
+    int nomorSurah,
+    Map<String, dynamic> detailData,
+  ) async {
     final db = await database;
-    
-    await db.insert(
-      'surah_detail_cache',
-      {
-        'nomor': nomorSurah,
-        'detail_data': jsonEncode(detailData),
-        'last_updated': DateTime.now().millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+    await db.insert('surah_detail_cache', {
+      'nomor': nomorSurah,
+      'detail_data': jsonEncode(detailData),
+      'last_updated': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<bool> isSurahDetailCacheStale(int nomorSurah, {int maxAgeDays = 30}) async {
+  Future<bool> isSurahDetailCacheStale(
+    int nomorSurah, {
+    int maxAgeDays = 30,
+  }) async {
     final cache = await getSurahDetailCache(nomorSurah);
     if (cache == null) return true;
 
-    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(cache['last_updated']);
+    final lastUpdated = DateTime.fromMillisecondsSinceEpoch(
+      cache['last_updated'],
+    );
     final now = DateTime.now();
     final difference = now.difference(lastUpdated);
 
@@ -409,7 +470,7 @@ class DatabaseHelper {
   }
 
   // ==================== UTILITY METHODS ====================
-  
+
   Future<void> clearAllCache() async {
     final db = await database;
     await db.delete('location_cache');
@@ -422,8 +483,9 @@ class DatabaseHelper {
     final db = await database;
     final today = DateTime.now();
     final yesterday = today.subtract(const Duration(days: 1));
-    final yesterdayString = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
-    
+    final yesterdayString =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
     // Delete schedules older than yesterday
     await db.delete(
       'prayer_schedule_cache',
@@ -433,13 +495,15 @@ class DatabaseHelper {
   }
 
   // ==================== NOTIFICATION SETTINGS METHODS ====================
-  
+
   Future<List<Map<String, dynamic>>> getAllNotificationSettings() async {
     final db = await database;
     return await db.query('notification_settings', orderBy: 'id ASC');
   }
 
-  Future<Map<String, dynamic>?> getNotificationSetting(String prayerName) async {
+  Future<Map<String, dynamic>?> getNotificationSetting(
+    String prayerName,
+  ) async {
     final db = await database;
     final List<Map<String, dynamic>> results = await db.query(
       'notification_settings',
@@ -462,7 +526,8 @@ class DatabaseHelper {
 
     if (isEnabled != null) updates['is_enabled'] = isEnabled ? 1 : 0;
     if (soundEnabled != null) updates['sound_enabled'] = soundEnabled ? 1 : 0;
-    if (vibrateEnabled != null) updates['vibrate_enabled'] = vibrateEnabled ? 1 : 0;
+    if (vibrateEnabled != null)
+      updates['vibrate_enabled'] = vibrateEnabled ? 1 : 0;
 
     if (updates.isNotEmpty) {
       await db.update(
@@ -476,14 +541,11 @@ class DatabaseHelper {
 
   Future<void> toggleAllNotifications(bool enabled) async {
     final db = await database;
-    await db.update(
-      'notification_settings',
-      {'is_enabled': enabled ? 1 : 0},
-    );
+    await db.update('notification_settings', {'is_enabled': enabled ? 1 : 0});
   }
 
   // ==================== LAST READ QURAN METHODS ====================
-  
+
   // Save last read position
   Future<void> saveLastReadQuran({
     required int surahNumber,
@@ -491,22 +553,19 @@ class DatabaseHelper {
     required int ayatNumber,
   }) async {
     final db = await database;
-    
+
     // Delete any existing last read record (only keep one)
     await db.delete('last_read_quran');
-    
+
     // Insert new last read
-    await db.insert(
-      'last_read_quran',
-      {
-        'surah_number': surahNumber,
-        'surah_name': surahName,
-        'ayat_number': ayatNumber,
-        'last_read_time': DateTime.now().millisecondsSinceEpoch,
-      },
-    );
+    await db.insert('last_read_quran', {
+      'surah_number': surahNumber,
+      'surah_name': surahName,
+      'ayat_number': ayatNumber,
+      'last_read_time': DateTime.now().millisecondsSinceEpoch,
+    });
   }
-  
+
   // Get last read position
   Future<Map<String, dynamic>?> getLastReadQuran() async {
     final db = await database;
@@ -515,10 +574,10 @@ class DatabaseHelper {
       orderBy: 'last_read_time DESC',
       limit: 1,
     );
-    
+
     return results.isEmpty ? null : results.first;
   }
-  
+
   // Clear last read
   Future<void> clearLastReadQuran() async {
     final db = await database;
@@ -526,7 +585,7 @@ class DatabaseHelper {
   }
 
   // ==================== FAVORITE AYAT METHODS ====================
-  
+
   // Add ayat to favorites
   Future<bool> addFavoriteAyat({
     required int surahNumber,
@@ -537,32 +596,27 @@ class DatabaseHelper {
     required String ayatTextIndonesia,
   }) async {
     final db = await database;
-    
+
     try {
-      await db.insert(
-        'favorite_ayat',
-        {
-          'surah_number': surahNumber,
-          'surah_name': surahName,
-          'ayat_number': ayatNumber,
-          'ayat_text_arab': ayatTextArab,
-          'ayat_text_latin': ayatTextLatin,
-          'ayat_text_indonesia': ayatTextIndonesia,
-          'created_at': DateTime.now().millisecondsSinceEpoch,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert('favorite_ayat', {
+        'surah_number': surahNumber,
+        'surah_name': surahName,
+        'ayat_number': ayatNumber,
+        'ayat_text_arab': ayatTextArab,
+        'ayat_text_latin': ayatTextLatin,
+        'ayat_text_indonesia': ayatTextIndonesia,
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
       return true;
     } catch (e) {
-
       return false;
     }
   }
-  
+
   // Remove ayat from favorites
   Future<bool> removeFavoriteAyat(int surahNumber, int ayatNumber) async {
     final db = await database;
-    
+
     try {
       await db.delete(
         'favorite_ayat',
@@ -571,45 +625,183 @@ class DatabaseHelper {
       );
       return true;
     } catch (e) {
-
       return false;
     }
   }
-  
+
   // Check if ayat is favorited
   Future<bool> isAyatFavorited(int surahNumber, int ayatNumber) async {
     final db = await database;
-    
+
     final List<Map<String, dynamic>> results = await db.query(
       'favorite_ayat',
       where: 'surah_number = ? AND ayat_number = ?',
       whereArgs: [surahNumber, ayatNumber],
       limit: 1,
     );
-    
+
     return results.isNotEmpty;
   }
-  
+
   // Get all favorite ayat
   Future<List<Map<String, dynamic>>> getAllFavoriteAyat() async {
     final db = await database;
-    return await db.query(
-      'favorite_ayat',
-      orderBy: 'created_at DESC',
-    );
+    return await db.query('favorite_ayat', orderBy: 'created_at DESC');
   }
-  
+
   // Get favorite count
   Future<int> getFavoriteAyatCount() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM favorite_ayat');
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM favorite_ayat',
+    );
     return (result.first['count'] as int?) ?? 0;
   }
-  
+
   // Clear all favorites
   Future<void> clearAllFavoriteAyat() async {
     final db = await database;
     await db.delete('favorite_ayat');
+  }
+
+  // ==================== OFFLINE AUDIO METHODS (Premium Feature) ====================
+
+  // Save offline audio info
+  Future<bool> saveOfflineAudio({
+    required int surahNumber,
+    required String filePath,
+    required int fileSize,
+  }) async {
+    final db = await database;
+
+    try {
+      await db.insert('offline_audio', {
+        'surah_number': surahNumber,
+        'file_path': filePath,
+        'file_size': fileSize,
+        'downloaded_at': DateTime.now().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Check if surah audio is downloaded
+  Future<bool> isSurahAudioDownloaded(int surahNumber) async {
+    final db = await database;
+    final result = await db.query(
+      'offline_audio',
+      where: 'surah_number = ?',
+      whereArgs: [surahNumber],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  // Get offline audio path
+  Future<String?> getOfflineAudioPath(int surahNumber) async {
+    final db = await database;
+    final result = await db.query(
+      'offline_audio',
+      where: 'surah_number = ?',
+      whereArgs: [surahNumber],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['file_path'] as String?;
+    }
+    return null;
+  }
+
+  // Get all downloaded audio
+  Future<List<Map<String, dynamic>>> getAllDownloadedAudio() async {
+    final db = await database;
+    return await db.query('offline_audio', orderBy: 'surah_number ASC');
+  }
+
+  // Delete offline audio
+  Future<bool> deleteOfflineAudio(int surahNumber) async {
+    final db = await database;
+
+    try {
+      await db.delete(
+        'offline_audio',
+        where: 'surah_number = ?',
+        whereArgs: [surahNumber],
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get total offline audio size
+  Future<int> getTotalOfflineAudioSize() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT SUM(file_size) as total FROM offline_audio',
+    );
+    return (result.first['total'] as int?) ?? 0;
+  }
+
+  // Get downloaded audio count
+  Future<int> getDownloadedAudioCount() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM offline_audio',
+    );
+    return (result.first['count'] as int?) ?? 0;
+  }
+
+  // ==================== MOSQUES METHODS ====================
+
+  // Insert mosques from CSV data
+  Future<void> insertMosques(List<Map<String, dynamic>> mosques) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (final mosque in mosques) {
+      batch.insert(
+        'mosques',
+        mosque,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await batch.commit(noResult: true);
+  }
+
+  // Get all mosques
+  Future<List<Map<String, dynamic>>> getAllMosques() async {
+    final db = await database;
+    return await db.query('mosques', orderBy: 'name ASC');
+  }
+
+  // Get mosques by city
+  Future<List<Map<String, dynamic>>> getMosquesByCity(String city) async {
+    final db = await database;
+    return await db.query(
+      'mosques',
+      where: 'city = ?',
+      whereArgs: [city],
+      orderBy: 'name ASC',
+    );
+  }
+
+  // Check if mosques data already loaded
+  Future<bool> isMosquesDataLoaded() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM mosques');
+    final count = (result.first['count'] as int?) ?? 0;
+    return count > 0;
+  }
+
+  // Clear all mosques data
+  Future<void> clearMosquesData() async {
+    final db = await database;
+    await db.delete('mosques');
   }
 
   Future<void> close() async {
